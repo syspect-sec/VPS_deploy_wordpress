@@ -1,5 +1,7 @@
-# Ignore .gitignore files
+# Ignore all folder files
+.DS_Store
 
+# Ignore .gitignore files
 
 # Ignore temp files
 tmp/
@@ -7,11 +9,6 @@ tmp/
 # Ignore key files
 payloads/id_rsa_github
 payloads/id_rsa_github.pub
-payloads/paywall_vendor_api_keys.php
-payloads/facebook_api_keys.php
-payloads/mailserver_keys.php
-payloads/google_api_keys.php
-payloads/database_keys.php
 
 # Ignore log file
 log
