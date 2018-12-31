@@ -1,0 +1,4 @@
+# Other scripts that are included in the GitHub repository.
+# the path is relative to the directory that the GitHub repository is cloned into.
+# Example:
+# scripts/app_init.sh

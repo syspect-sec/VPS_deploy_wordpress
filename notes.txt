@@ -1,0 +1,7 @@
+# TODO:
+-modify the database file after cloning from github
+-modify the entire installation file after cloning from github
+
+-update the doucmentation: need to modify the httpd.conf file extensively for folder
+permissions and also for IP rewrite.
+-change database credentials into the wp-config.php file

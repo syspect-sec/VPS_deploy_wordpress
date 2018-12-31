@@ -1,0 +1,39 @@
+# Instructions: Each record should be formatted as the sample below.
+# <file> specifies in the directory and <dir> will change permissions on directory.
+# Lines that start with '#' will be ignored
+# SELinux permissions need to be adjusted for Centos.
+# Apache needs special read or write permissions.
+# These are handled with <se-dir-read> and <se-dir-read-write>
+# Examples:
+# Sample 1: 0440 on all files recursively in directory path /var/www/
+# <file> -R 0440 /var/www/html/
+# Sample 2: 0770 on only a single directory
+# <dir> 0770 /var/www/html/yoursite/uploads/
+# Sample 3: recursive read for SELinux on the entire web-application directory
+# <se-dir-read> -R /var/www/html/yoursite/
+# Sample 4: read write permissions on a specific directory
+# <se-dir-read-write> /var/www/html/yoursite/logs/
+#
+# All files in the mail WordPress directory get written with 644
+#
+<file> -R 0644 /var/www/html/github_repo_name/
+#
+# All directories in web-root get written with Apache execute only
+#
+<dir> -R 0733 /var/www/html/github_repo_name/
+#
+# Give SELinux read permissions to web-root
+#
+<se-dir-read> -R /var/www/html/github_repo_name/
+#
+# Allow write to log directory
+#
+<se-dir-read-write> -R /var/www/html/github_repo_name/extra_files/logs/
+#
+# Allow write all to directories
+#
+<se-dir-read-write> -R /var/www/html/github_repo_name/
+#
+# Allow execute to the scripts for initializing app
+#
+#<file> 0500 /var/www/html/github_repo_name/extra_files/scripts/

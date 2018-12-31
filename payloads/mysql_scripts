@@ -1,0 +1,6 @@
+# MySQL scripts to run
+# all MySQL scripts should be relative from GitHub repository path
+# Create the base database
+# Samples:
+#extra_files/database/wordpress_database_initialization.sql
+#extra_files/database/create_users.sql

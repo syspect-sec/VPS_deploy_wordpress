@@ -1,0 +1,5 @@
+# Add any crons that you want installed here.  For example,
+# If you have any scripts included in the GitHub repository
+# That you want cronned you can add here like sample below:
+# 0 0 * * 0 python /var/www/html/reponame/scripts/scriptname.py
+# Install VP mailer crons

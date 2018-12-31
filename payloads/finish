@@ -1,0 +1,7 @@
+# This file tells the script what to do with the
+# server once the script is finished.  The first item
+# with a value `1` will be executed. If all are are `0`
+# then no action is taken
+poweroff 0
+reboot 0
+close 1
