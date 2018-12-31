@@ -1,7 +1,27 @@
-# TODO:
+# TODO: Documentation:
+-add steps of Digital Ocean DNS pointing you your correct VPS IP
+
+# TODO: Improve main script
 -modify the database file after cloning from github
 -modify the entire installation file after cloning from github
-
--update the doucmentation: need to modify the httpd.conf file extensively for folder
-permissions and also for IP rewrite.
 -change database credentials into the wp-config.php file
+-check that the payload on the server is closing properly after deployment
+-add a flag that will modify all the files that can be autoconfigured using the serverdata file
+-add a element to the load script that will double check all parts of the config files to ensure the default values that have been changed
+-add an auto generation of passwords for root, user, and mysql users.
+
+# TODO: Look at the script TODO lists
+
+# TODO: Errors during script... using rmp???
+warning: /var/tmp/rpm-tmp.H4chsZ: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
+warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.22-1.w7.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
+
+#
+# Things to check on server after a deployment
+#
+-can ssh back into -- check
+-SSL/TLS certificate working -- check
+-cron tabs installed -- check
+-all mysql scripts run successfully (content database working from MySQL cli but not script in VPS_deploy)
+-apache config locked --check
+-apache running --check
