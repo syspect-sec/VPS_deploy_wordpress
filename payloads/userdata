@@ -5,4 +5,4 @@
 # root change_this_password
 # non_root_user change_this_password
 root change_this_password
-non_root_user change_this_password
+non_root_username change_this_password
