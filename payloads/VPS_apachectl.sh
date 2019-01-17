@@ -1,3 +1,4 @@
+#!/bin/bash
 # Apachectl Script accepts the command then starts or restarts apache
 if [ $1 = "restart" ]; then
   # Restart Apache

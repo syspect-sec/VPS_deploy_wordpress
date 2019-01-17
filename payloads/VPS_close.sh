@@ -1,3 +1,4 @@
+#!/bin/bash
 # Load a list of directories that will require special permissions
 echo "[Closing permisssions for web-root...]"
 while read -r -a dirperm

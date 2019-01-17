@@ -1,3 +1,4 @@
+#!/bin/bash
 # Load a list of directories that will require special permissions
 echo "[Opening permisssions for development access...]"
 while read -r -a dirperm

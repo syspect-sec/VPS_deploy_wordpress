@@ -1,3 +1,4 @@
+#!/bin/bash
 # Move the payload and main script to the server, and run remotely
 echo "[Moving payload and scripts to server...]"
 while read -r -a sshdata

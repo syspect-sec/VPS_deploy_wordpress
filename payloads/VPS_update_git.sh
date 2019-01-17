@@ -1,3 +1,4 @@
+#!/bin/bash
 # Move the payload and main script to the server, and run remotely
 echo "[Updating GitHub repository...]"
 if [ -s payloads/id_rsa_github ]
