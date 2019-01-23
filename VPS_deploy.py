@@ -42,8 +42,50 @@ ____   ______________  _________      .___                   .__
                                                                          """
 
 
+# Get the site URI from the user configured serverdata file
+def get_site_uri_from_file(cwd):
+
+    # Create an array to hold the serverdata
+    server_data = {}
+
+    # Open the serverdata file and find the uri
+    with open(cwd + "/serverdata", "r") as serverdata_file:
+        serverdata_array = serverdata_file.readlines()
+    for line in serverdata_array:
+        if line.strip()[0] is not "#":
+            if "IP" in line:
+                server_data.update({'IP' : line.split()[1]})
+            if "DomainName" in line:
+                server_data.update({'domain_name' : line.split()[1]})
+    # Print message to stdout
+    print "[Server data parsed to get the site URI...]"
+    # Return the dictionary with serverdata
+    return server_data
+
+# Get the github data from file
+def get_github_data_from_file(payload_dirpath):
+
+    # Create an array to hold the serverdata
+    github_data = {}
+
+    # Open the serverdata file and find the uri
+    with open(payload_dirpath + "/github_userdata", "r") as github_data_file:
+        github_data_array = github_data_file.readlines()
+    for line in github_data_array:
+        if line.strip()[0] is not "#":
+            line = line.split(" ")
+            github_data.update({"github_username" : line[1].strip()})
+            github_data.update({"github_reponame" : line[0].strip()})
+    # Print message to stdout
+    print "[Server data parsed to get the GitHub data...]"
+    # Return the dictionary with serverdata
+    return github_data
+
 # Loads the payload and returns args_array
 def load_payload(args_array):
+
+    # Remove any default settings from the payload
+    initialize_payload(args_array)
     # Store the critical information from the payload
     args_array = store_critical_information(args_array)
     # Create the payload
@@ -130,6 +172,134 @@ def output_critical_information(args_array):
     if args_array['write_critical_info_response'] == True:
         print "[Critical Information was written to file -> " + args_array['critical_information_filename'] + " ]"
 
+# Migrate the files to be deployed at a new URL
+def migrate_site_url(args_array):
+
+    ## Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    #TODO: Can also use the URL from the serverdata file
+
+    # Check if the infile is specified or use default
+    if args_array['command_args']['infile'] == False:
+        args_array['command_args']['infile'] = args_array['default_site_URI']
+    # If there was a url included check if it has https and filter down to URI
+    else:
+        # remove "https://", "http://", "www." from infile
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("https://")
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("http://")
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("www.")
+
+    # remove "https://", "http://", "www." from outfile
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("https://")
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("http://")
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("www.")
+
+    # Create infile variables for the URI, HTTPS_URL and WWW_URL
+    args_array['infile_https_url'] = "https:///" + args_array['command_args']['infile']
+    args_array['infile_http_url'] = "http:///" + args_array['command_args']['infile']
+    args_array['infile_www_url'] = "www" + args_array['command_args']['infile']
+    args_array['infile_uri'] = args_array['command_args']['infile']
+    print "Infile set to: " +  args_array['infile_uri']
+
+    # Create infile variables for the URI, HTTPS_URL and WWW_URL
+    args_array['outfile_https_url'] = "https:///" + args_array['command_args']['outfile']
+    args_array['outfile_http_url'] = "http:///" + args_array['command_args']['outfile']
+    args_array['outfile_www_url'] = "www" + args_array['command_args']['outfile']
+    args_array['outfile_uri'] = args_array['command_args']['outfile']
+    print "Outfile set to: " + args_array['outfile_uri']
+
+    # Print message to stdout
+    print "[Migrating site URL from " + args_array['infile_https_url'] +  " to " + args_array['outfile_https_url'] +  "...]"
+
+    # Keep track of replacements in the file
+    replacement_count = 0
+    # Loop through all files
+    for item in args_array["migrate_files_array"]:
+        # For any directories in the list
+        if os.path.isdir(item):
+            for filename in os.listdir(item):
+                if item[-1] != "/":
+                    item = item + "/"
+                # Call function to adjust file for migration
+                replacement_count += migrate_single_file_url(args_array, item + filename)
+        # For any files in the list
+        if os.path.isfile(item):
+            # Call function to adjust file for migration
+            replacement_count += migrate_single_file_url(args_array, item)
+
+    # Print the total number of replacements found
+    print "[ " + str(replacement_count) + " replacements were made...]"
+
+# Recieves a filename and looks for infile and changes to outfile
+def migrate_single_file_url(args_array, filename):
+
+    # Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    # Create an array to append the file data to
+    migrated_file_contents_array = []
+    # Get the base filename for output
+    base_filename = filename.split("/")[-1]
+    # Keep track of replacements in file
+    replacement_count = 0
+
+    # Print to stdout
+    print "[Starting to migrate " + base_filename + "...]"
+
+    # Open the file and replace the infile URL with the outfile
+    with open(filename, "r") as infile:
+        infile_contents = infile.readlines()
+
+    # Go through the file and replace URI, HTTP_URL, and HTTP_URL
+    for line in infile_contents:
+        # If the line is empty
+        if len(line.strip()) == 0:
+            print "\n"
+            migrated_file_contents_array.append("\n")
+        else:
+            line = line.strip("\n")
+            migrated_file_contents_array.append(line)
+
+    # Go though file and overwrite old file
+    for line in migrated_file_contents_array:
+        if "ripplesoftwaresandbox.ca" in line:
+            replacement_count += 1
+
+    # Rewrite the file arrray into the new file
+    with open(filename + ".new", "w") as outfile:
+        for line in migrated_file_contents_array:
+            # Replace the URL's
+            if args_array['infile_https_url'] in line:
+                print "[Found https replacement...]"
+                line = line.replace(args_array['infile_https_url'],args_array['outfile_https_url'])
+                replacement_count += 1
+            if args_array['infile_http_url'] in line:
+                print "[Found http replacement...]"
+                line = line.replace(args_array['infile_http_url'],args_array['outfile_http_url'])
+                replacement_count += 1
+            if args_array['infile_www_url'] in line:
+                print "[Looking www replacement...]"
+                line = line.replace(args_array['infile_www_url'],args_array['outfile_www_url'])
+                replacement_count += 1
+            if args_array['infile_uri'] in line:
+                print "[Looking uri replacement...]"
+                line = line.replace(args_array['infile_uri'],args_array['outfile_uri'])
+                replacement_count += 1
+            # Check if the line is a blank line
+            if len(line.strip("\n")) == 0:
+                outfile.write("\n")
+            else:
+                outfile.write(line + "\n")
+
+    # Print to stdout
+    print "[Finished migrating file : " + base_filename + "...]"
+    print "[" + str(replacement_count) +  " replacements were found...]"
+    # Return the replacement count to be tracked
+    return replacement_count
+
+# Add the user's github username and credentials to all files in the payload
+
 # Removes payload files from the server
 def remove_payload(args_array):
 
@@ -214,14 +384,12 @@ def open_payload(args_array):
                 print "- Payload prepared: " + enc_file_output
                 logger.info("- Payload prepared: " + enc_file_output)
 
-
         # Chmod the script files to be executable
         for ex_file in args_array['executable_files_array']:
             os.chmod(ex_file, 0700)
 
         print "[Payload opened...]"
         logger.info("[Payload opened...]")
-
 
     except Exception as e:
         print traceback
@@ -233,7 +401,6 @@ def open_payload(args_array):
     	# Log error with creating filepath
     	logger.error('Failed to decrypt all files: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
     	return False
-
 
 # Checks for required files and encrypt the main payload.
 def create_payload(args_array):
@@ -267,7 +434,6 @@ def create_payload(args_array):
                     logger.info("- Payload is missing a required file: " + item_filename)
                     return False
 
-
         # Get a list of files that are present
         file_list = os.listdir(args_array['payload_dirpath'])
         # Encrypt all files that are present in the directory
@@ -300,7 +466,6 @@ def create_payload(args_array):
             print "- Payload file: " + plaintext_file + " encrypted..."
             logger.warning("- Payload is missing a required file: " + item_filename)
 
-
         # Zip the payload directory
         shutil.make_archive(args_array['compressed_payload_filename'], 'zip', args_array['payload_dirpath'])
         # Remove the payloads unencrypted directory
@@ -320,6 +485,20 @@ def create_payload(args_array):
         # Log error with creating filepath
         logger.error('Failed to encrypt the payload: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
         return False
+
+# Remove any default settings from the payload
+def initialize_payload(args_array):
+
+    ## Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    print "[Initializing the payload with configured server settings...]"
+    logger.info("[Initializing the payload with configured server settings...]")
+
+    # Initialize the payload files with the site IP and URL
+
+    # Initialize the payload files with the github_username and github_reponame
+
 
 # Used to check if the payload is loaded or open
 def is_payload_open(args_array):
@@ -344,7 +523,7 @@ def build_command_arguments(args, args_array):
         # Pop off the first element of array because it's the application filename
         args.pop(0)
 
-        # First check if opendev or closedev arg issued
+        # First check if opendev, closedev arg issued
         if len(args) == 1:
             if "-opendev" in args:
                 # Return the command args array
@@ -357,7 +536,7 @@ def build_command_arguments(args, args_array):
             else: return False
 
         # If not opendev or closedev there needs to be 3 or 4 arguments
-        elif len(args) >= 3 and len(args) <=4:
+        elif len(args) <=7:
             if "-p" in args:
                 # Calculate position of -p argument
                 password_flag_position = args.index("-p")
@@ -378,6 +557,32 @@ def build_command_arguments(args, args_array):
                 print "password please..."
                 return False
 
+            # Look for infile in command args
+            if "-if" in args:
+                # Calculate position of -if argument
+                infile_flag_position = args.index("-if")
+                # Pop the flag off the array
+                args.pop(infile_flag_position)
+                # Look for the infile in the next position
+                infile = args[infile_flag_position]
+                # Pop the infile string out of the argument array
+                args.pop(infile_flag_position)
+                # Append the infile onto the command line argument array
+                command_args.update({"infile" : infile})
+
+            # Look for outfile in command args
+            if "-of" in args:
+                # Calculate position of -of argument
+                outfile_flag_position = args.index("-of")
+                # Pop the flag off the array
+                args.pop(outfile_flag_position)
+                # Look for the outfile in the next position
+                outfile = args[outfile_flag_position]
+                # Pop the outfile string out of the argument array
+                args.pop(outfile_flag_position)
+                # Append the outfile onto the command line argument array
+                command_args.update({"outfile" : outfile})
+
             # For loop to modify elements and strip "-"
             for item in args:
                 if item in args_array['allowed_args_array']:
@@ -392,10 +597,19 @@ def build_command_arguments(args, args_array):
                     print "Command line args failed..."
                     return False
 
-            # Check that purge is not set with load or open flags
+            # Check that purge is not set with illegal flags
             if command_args['purge']:
                 if command_args['command'] in args_array['not_with_purge']:
                     print "Purge can only work with -deploy or -remotedeploy..."
+                    return False
+
+            # Check for outfile url if -migrate flag is set
+            # and set infile to default if it is not set
+            if command_args['command'] == "migrate":
+                if "infile" not in command_args:
+                    command_args.update({"infile" : False})
+                if "outfile" not in command_args:
+                    print "Outfile must be be specified using -of when migrating the site..."
                     return False
 
             # Return the command args array
@@ -419,18 +633,23 @@ def build_command_arguments(args, args_array):
 def print_command_help_output():
     argument_output = "Notice : You need to run this script as root.\n"
     argument_output += "Notice : -opendev & -closedev do not require -p <password>.  All other commands do.\n"
-    argument_output += "Deploy usage : VPS_deploy.py [-load | -open | -deploy | -remotedeploy | -purge | -update] [-p <password>] \n"
-    argument_output += "Open/close the web-root for non-root read/write permissions: VPS_deploy [-opendev | -closedev]"
+    argument_output += "Deploy usage : VPS_deploy.py [-load | -open | -deploy | -remotedeploy | -purge | -update] [-p <password>] | -backup <password>| -migrate -if <current url> -of <destination url>\n"
+    argument_output += "Open/close the web-root for non-root read/write permissions: VPS_deploy [-opendev | -closedev]\n"
     argument_output += "-h, -help : print help menu\n"
     argument_output += "-load : encrypt and compress the payload to be deployed\n"
     argument_output += "-open : open the payload for editing\n"
-    argument_output += "-deploy : deploy the payload to the VPS. \n"
+    argument_output += "-deploy : deploy the payload to the VPS\n"
     argument_output += "-remotedeploy : move payload and script to remote server, deploy, then remove payload\n"
-    argument_output += "-purge : deploy the payload and remove payload files.\n"
-    argument_output += "-update : update the GitHub repository (must be done locally on server).\n"
+    argument_output += "-purge : deploy the payload and remove payload files\n"
+    argument_output += "-update : update the GitHub repository (must be done locally on server)\n"
+    argument_output += "-backup : backup the GitHub repository and move the databse backups to backup server\n"
+    argument_output += "-migrate : migrate the WordPress site for another URL\n"
     argument_output += "-opendev : open the permissions on the web-root for editing\n"
     argument_output += "-closedev : close the permissions on the web-root for editing\n"
     argument_output += "-p <password> : password required to decrypt the data payload\n"
+    argument_output += "-if <current url> : the current url to be migrate from (default is yoursite.com)\n"
+    argument_output += "-of <destination url> : the new url the WordPress site will be hosted on\n"
+    argument_output += "-wp <wordpress dirpath> : the dirpath of local WordPress site\n"
     print argument_output
 
 # Setup logging
@@ -449,7 +668,9 @@ if __name__ == '__main__':
     # Define some working directory variables
     cwd = os.getcwd()
     payload_dirpath = cwd + "/payloads/"
-    site_URI = "elaan.com.tw"
+    # Collect the serverdata from config file
+    server_data = get_site_uri_from_file(cwd)
+    github_data = get_github_data_from_file(payload_dirpath)
 
     ## Declare required variables for filepath and config filename
     args_array = {
@@ -458,12 +679,25 @@ if __name__ == '__main__':
         "sandbox_mode" : True,
         "log_filename" : "log",
         "cwd" : cwd + "/",
+        # Default site URL in the vanilla version of the package
+        "default_site_URI" : "yoursite.com",
+        # Default IP address in the vanilla version of the package
+        "default_site_IP" : "123.456.78.9",
+        # Default github username in the vanilla version of the package
+        "default_github_username" : "github_username",
+        # Default github repo username in the vanilla version of the package
+        "default_github_repo" : "github_repo",
 		# URI of the web-application to be deployed on the VPS
-        "site_URI" : site_URI,
+        "site_URI" : server_data['domain_name'],
+        # IP of the server to host the site
+        "site_IP" : server_data['IP'],
+        # GitHub username and repo name
+        "github_username" : github_data['github_username'],
+        "github_reponame" : github_data['github_reponame'],
         # Allowed command line args
-		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update"],
+		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
         # Command args that are not allowed with purge
-        'not_with_purge' : ["load", "open", "opendev", "closedev", "update"],
+        'not_with_purge' : ["load", "open", "opendev", "closedev", "update", "migrate", "backup"],
         # Payload and required_files directory path
         "payload_dirpath" : payload_dirpath,
         # File to check if payload locked or not
@@ -476,10 +710,21 @@ if __name__ == '__main__':
         "VPS_deploy_script_remote_filename" : "VPS_remote.sh",
         # Filename of script to update GitHub repository
         "VPS_update_git_filename" : "payloads/VPS_update_git.sh",
+        # Filename of script to update GitHub repository
+        "VPS_backup_filename" : "payloads/VPS_backup_git.sh",
         # Filename of script to open the permissions for dev
         "VPS_opendev_filename" : "VPS_open.sh",
         # Filename of script to close permissions
         "VPS_closedev_filename" : "VPS_close.sh",
+        # Files to check during an initialization of the payload
+        "initialize_files_array" : [
+            cwd + "/var/www/html/" + github_data['github_reponame'] + "/"
+        ],
+        # Files to check during a migrate
+        "migrate_files_array" : [
+            cwd + "/payloads/",
+            cwd + "/serverdata"
+        ],
         # Array of files that need to be executable
         "executable_files_array" : [
             "payloads/VPS_deploy.sh",
@@ -488,6 +733,7 @@ if __name__ == '__main__':
             "payloads/VPS_apachectl.sh",
             "payloads/apache_config_locker.py",
             "payloads/VPS_update_git.sh",
+            "payloads/VPS_backup_git.sh"
         ],
         # Array of all possible files in required_files
         "payload_filename_array" : {
@@ -642,3 +888,27 @@ if __name__ == '__main__':
                 subprocess.call("./" + args_array['VPS_closedev_filename'], shell=True)
             else:
                 print "[Could not locate the script to close web-directory permissions...]"
+
+        # If the command opendev then run script to change permissions
+        elif args_array['command_args']['command'] == "backup":
+            # Open the payload again
+            if is_payload_open(args_array) == False:
+                print "[Opening payload...]"
+                # Open the payload
+                open_payload(args_array)
+
+            # Check for the location of the script and run it
+            if os.path.isfile("payloads/" + args_array['VPS_backup_filename']):
+                subprocess.call("payloads/" + args_array['VPS_backup_filename'], shell=True)
+
+        # If the command opendev then run script to change permissions
+        elif args_array['command_args']['command'] == "migrate":
+            # Open the payload again
+            if is_payload_open(args_array) == False:
+                print "[Opening payload...]"
+                # Open the payload
+                open_payload(args_array)
+
+            # Call the function to migrate the site urls
+            migrate_site_url(args_array)
+            migrate_site_github_repo(args_array)
