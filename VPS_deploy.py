@@ -271,19 +271,19 @@ def migrate_single_file_url(args_array, filename):
         for line in migrated_file_contents_array:
             # Replace the URL's
             if args_array['infile_https_url'] in line:
-                print "[Found https replacement...]"
+                print "[Found https to be replaced...]"
                 line = line.replace(args_array['infile_https_url'],args_array['outfile_https_url'])
                 replacement_count += 1
             if args_array['infile_http_url'] in line:
-                print "[Found http replacement...]"
+                print "[Found http to be replaced...]"
                 line = line.replace(args_array['infile_http_url'],args_array['outfile_http_url'])
                 replacement_count += 1
             if args_array['infile_www_url'] in line:
-                print "[Looking www replacement...]"
+                print "[Found www to be replaced...]"
                 line = line.replace(args_array['infile_www_url'],args_array['outfile_www_url'])
                 replacement_count += 1
             if args_array['infile_uri'] in line:
-                print "[Looking uri replacement...]"
+                print "[Found uri to be replaced...]"
                 line = line.replace(args_array['infile_uri'],args_array['outfile_uri'])
                 replacement_count += 1
             # Check if the line is a blank line
@@ -293,12 +293,10 @@ def migrate_single_file_url(args_array, filename):
                 outfile.write(line + "\n")
 
     # Print to stdout
-    print "[Finished migrating file : " + base_filename + "...]"
-    print "[" + str(replacement_count) +  " replacements were found...]"
+    #print "[Finished migrating file : " + base_filename + "...]"
+    #print "[" + str(replacement_count) +  " replacements were found...]"
     # Return the replacement count to be tracked
     return replacement_count
-
-# Add the user's github username and credentials to all files in the payload
 
 # Removes payload files from the server
 def remove_payload(args_array):
@@ -492,17 +490,128 @@ def initialize_payload(args_array):
     ## Include logger in the main function
     logger = logging.getLogger(args_array['app_name'])
 
-    print "[Initializing the payload with configured server settings...]"
-    logger.info("[Initializing the payload with configured server settings...]")
+    print "[Initializing the payload with configured serverdata settings...]"
+    logger.info("[Initializing the payload with configured serverdata settings...]")
 
-    # Initialize the payload files with the site IP and URL
+    # Open the .init_as file to see if default has already been overwritten
+    with open(args_array['payload_init_filename'], "r") as init_as:
+        init_as_contents = init_as.readlines()
+    # Check if payload is still default or has been changed
+    if init_as_contents[0].strip() != "default":
+        # Set the current site IP and URI to be replaced from the file
+        args_array['current_site_IP'] = init_as_contents[0]
+        args_array['current_site_URI'] = init_as_contents[1]
+        # Set the current GitHub username and repo name to be replaced from the file
+        args_array['current_github_username'] = init_as_contents[2]
+        args_array['current_github_reponame'] = init_as_contents[3]
+    # If the site has not been init yet
+    else:
+        # Set the current site IP to be replaced as the default
+        args_array['current_site_IP'] = args_array['default_site_IP']
+        args_array['current_site_URI'] = args_array['default_site_URI']
+        # Set the current GitHub username and repo name to be replaced from the file
+        args_array['current_github_username'] = args_array['default_github_username']
+        args_array['current_github_reponame'] = args_array['default_github_reponame']
+    # Write the new serverdata configuration of payload into .init_as
+    with open(args_array['payload_init_filename'], "w") as init_as:
+        init_as.write(args_array['site_IP'] + "\n")
+        init_as.write(args_array['site_URI'] + "\n")
+        init_as.write(args_array['github_username'] + "\n")
+        init_as.write(args_array['github_reponame'] + "\n")
 
-    # Initialize the payload files with the github_username and github_reponame
+    # Log and Stdout the changes to be made
+    print "[Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP'] + "...]"
+    logger.info("[Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP'] + "...]")
+    print "[Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'] + "...]"
+    logger.info("[Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'] + "...]")
+    print "[Initializing the payload GitHub repo from " + args_array['current_github_username'] + "/" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + "/" + args_array['github_reponame'] + "...]"
+    logger.info("[Initializing the payload GitHub repo from " + args_array['current_github_username'] + "/" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + "/" + args_array['github_reponame'] + "...]")
 
+    # Rewrite the payload files with the new site IP and URL
+    for item in args_array['initialize_files_array']:
+        # For any directories in the list
+        if os.path.isdir(item):
+            for filename in os.listdir(item):
+                if item[-1] != "/":
+                    item = item + "/"
+                # Call function to adjust file for migration
+                replacement_count += initialize_single_file(args_array, item + filename)
+        # For any files in the list
+        if os.path.isfile(item):
+            # Call function to adjust file for migration
+            replacement_count += initialize_single_file(args_array, item)
+
+# Recieves a filename and looks for infile and changes to outfile
+def initialize_single_file(args_array, filename):
+
+    # Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    # Create an array to append the file data to
+    initialized_file_contents_array = []
+    # Get the base filename for output
+    base_filename = filename.split("/")[-1]
+    # Keep track of replacements in file
+    replacement_count = 0
+
+    # Print to stdout
+    print "[Starting to initialize " + base_filename + "...]"
+
+    # Open the file and replace the existing values
+    with open(filename, "r") as infile:
+        infile_contents = infile.readlines()
+
+    # Go through the file and replace URI, HTTP_URL, and HTTP_URL
+    for line in infile_contents:
+        # If the line is empty
+        if len(line.strip()) == 0:
+            print "\n"
+            initialized_file_contents_array.append("\n")
+        else:
+            line = line.strip("\n")
+            initialized_file_contents_array.append(line)
+
+    # Go though file and overwrite old file
+    for line in initialized_file_contents_array:
+        if "ripplesoftwaresandbox.ca" in line:
+            replacement_count += 1
+
+    # Rewrite the file arrray into the new file
+    with open(filename + ".new", "w") as outfile:
+        for line in initialized_file_contents_array:
+            # Replace any instances of the default github usernames
+            if args_array['current_site_IP'] in line:
+                print "[Found IP to be replaced...]"
+                line = line.replace(args_array['current_site_IP'],args_array['site_IP'])
+                replacement_count += 1
+            if args_array['current_site_URI'] in line:
+                print "[Found URI to be replaced...]"
+                line = line.replace(args_array['current_site_URI'],args_array['site_URI'])
+                replacement_count += 1
+            if args_array['current_github_username'] in line:
+                print "[Found GitHub username to be replaced...]"
+                line = line.replace(args_array['current_github_username'],args_array['github_username'])
+                replacement_count += 1
+            if args_array['current_github_reponame'] in line:
+                print "[Found GitHub reponame to be replaced...]"
+                line = line.replace(args_array['current_github_reponame'],args_array['github_reponame'])
+                replacement_count += 1
+            # Check if the line is a blank line
+            if len(line.strip("\n")) == 0:
+                outfile.write("\n")
+            else:
+                outfile.write(line + "\n")
+
+    # Print to stdout
+    print "[Finished initializing file : " + base_filename + "...]"
+    print "[" + str(replacement_count) +  " replacements were found...]"
+    # Return the replacement count to be tracked
+    return replacement_count
 
 # Used to check if the payload is loaded or open
 def is_payload_open(args_array):
 
+    # If the payload directory exists, payload is open
     if os.path.exists(args_array['payload_dirpath']):
         return True
     else:
@@ -671,6 +780,8 @@ if __name__ == '__main__':
     # Collect the serverdata from config file
     server_data = get_site_uri_from_file(cwd)
     github_data = get_github_data_from_file(payload_dirpath)
+    # Default location of the local WordPress site files
+    default_local_site = cwd + "/var/www/html/" + github_data['github_reponame'] + "/",
 
     ## Declare required variables for filepath and config filename
     args_array = {
@@ -686,7 +797,7 @@ if __name__ == '__main__':
         # Default github username in the vanilla version of the package
         "default_github_username" : "github_username",
         # Default github repo username in the vanilla version of the package
-        "default_github_repo" : "github_repo",
+        "default_github_reponame" : "github_reponame",
 		# URI of the web-application to be deployed on the VPS
         "site_URI" : server_data['domain_name'],
         # IP of the server to host the site
@@ -702,6 +813,8 @@ if __name__ == '__main__':
         "payload_dirpath" : payload_dirpath,
         # File to check if payload locked or not
         "payload_ready_filename" : ".passcheck",
+        # File to check if payload is still default or has been init
+        "payload_init_filename" : ".init_as",
         # Filepath to zipped compressed payload
         "compressed_payload_filename" : "payload",
         # Filename of the main VPS_deploy script
@@ -718,7 +831,8 @@ if __name__ == '__main__':
         "VPS_closedev_filename" : "VPS_close.sh",
         # Files to check during an initialization of the payload
         "initialize_files_array" : [
-            cwd + "/var/www/html/" + github_data['github_reponame'] + "/"
+            cwd + "payloads/httd.conf",
+            cwd + "payloads/site_ownership"
         ],
         # Files to check during a migrate
         "migrate_files_array" : [
