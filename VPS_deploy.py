@@ -261,31 +261,28 @@ def migrate_single_file_url(args_array, filename):
             line = line.strip("\n")
             migrated_file_contents_array.append(line)
 
-    # Go though file and overwrite old file
-    for line in migrated_file_contents_array:
-        if "ripplesoftwaresandbox.ca" in line:
-            replacement_count += 1
-
     # Rewrite the file arrray into the new file
-    with open(filename + ".new", "w") as outfile:
+    with open(filename + ".migrated", "w") as outfile:
         for line in migrated_file_contents_array:
-            # Replace the URL's
-            if args_array['infile_https_url'] in line:
-                print "[Found https to be replaced...]"
-                line = line.replace(args_array['infile_https_url'],args_array['outfile_https_url'])
-                replacement_count += 1
-            if args_array['infile_http_url'] in line:
-                print "[Found http to be replaced...]"
-                line = line.replace(args_array['infile_http_url'],args_array['outfile_http_url'])
-                replacement_count += 1
-            if args_array['infile_www_url'] in line:
-                print "[Found www to be replaced...]"
-                line = line.replace(args_array['infile_www_url'],args_array['outfile_www_url'])
-                replacement_count += 1
-            if args_array['infile_uri'] in line:
-                print "[Found uri to be replaced...]"
-                line = line.replace(args_array['infile_uri'],args_array['outfile_uri'])
-                replacement_count += 1
+            # Do not change comment lines
+            if line.strip()[0] != "#":
+                # Replace the URL's
+                if args_array['infile_https_url'] in line:
+                    print "[Found https to be replaced...]"
+                    line = line.replace(args_array['infile_https_url'],args_array['outfile_https_url'])
+                    replacement_count += 1
+                if args_array['infile_http_url'] in line:
+                    print "[Found http to be replaced...]"
+                    line = line.replace(args_array['infile_http_url'],args_array['outfile_http_url'])
+                    replacement_count += 1
+                if args_array['infile_www_url'] in line:
+                    print "[Found www to be replaced...]"
+                    line = line.replace(args_array['infile_www_url'],args_array['outfile_www_url'])
+                    replacement_count += 1
+                if args_array['infile_uri'] in line:
+                    print "[Found uri to be replaced...]"
+                    line = line.replace(args_array['infile_uri'],args_array['outfile_uri'])
+                    replacement_count += 1
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:
                 outfile.write("\n")
@@ -577,25 +574,27 @@ def initialize_single_file(args_array, filename):
             replacement_count += 1
 
     # Rewrite the file arrray into the new file
-    with open(filename + ".new", "w") as outfile:
+    with open(filename + ".init", "w") as outfile:
         for line in initialized_file_contents_array:
-            # Replace any instances of the default github usernames
-            if args_array['current_site_IP'] in line:
-                print "[Found IP to be replaced...]"
-                line = line.replace(args_array['current_site_IP'],args_array['site_IP'])
-                replacement_count += 1
-            if args_array['current_site_URI'] in line:
-                print "[Found URI to be replaced...]"
-                line = line.replace(args_array['current_site_URI'],args_array['site_URI'])
-                replacement_count += 1
-            if args_array['current_github_username'] in line:
-                print "[Found GitHub username to be replaced...]"
-                line = line.replace(args_array['current_github_username'],args_array['github_username'])
-                replacement_count += 1
-            if args_array['current_github_reponame'] in line:
-                print "[Found GitHub reponame to be replaced...]"
-                line = line.replace(args_array['current_github_reponame'],args_array['github_reponame'])
-                replacement_count += 1
+            # Do not change comment lines
+            if line.strip()[0] != "#":
+                # Replace any instances of the default github data
+                if args_array['current_site_IP'] in line:
+                    print "[Found IP to be replaced...]"
+                    line = line.replace(args_array['current_site_IP'],args_array['site_IP'])
+                    replacement_count += 1
+                if args_array['current_site_URI'] in line:
+                    print "[Found URI to be replaced...]"
+                    line = line.replace(args_array['current_site_URI'],args_array['site_URI'])
+                    replacement_count += 1
+                if args_array['current_github_username'] in line:
+                    print "[Found GitHub username to be replaced...]"
+                    line = line.replace(args_array['current_github_username'],args_array['github_username'])
+                    replacement_count += 1
+                if args_array['current_github_reponame'] in line:
+                    print "[Found GitHub reponame to be replaced...]"
+                    line = line.replace(args_array['current_github_reponame'],args_array['github_reponame'])
+                    replacement_count += 1
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:
                 outfile.write("\n")
