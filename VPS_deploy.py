@@ -67,7 +67,7 @@ def get_server_data_from_file(cwd):
                 print "Remote server IP " + server_data['remote_backup_IP']
     # Check to see the serverdata has been modified
     if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data:
-        print "[You did not modify the " + cwd + "/serverdata" + "...]"
+        print "[You did add your server config to the serverdata file...]"
         exit()
 
     # Set a false flag if there is no remote server IP
@@ -85,19 +85,20 @@ def get_github_data_from_file(payload_dirpath):
     # Create an array to hold the serverdata
     github_data = {}
 
-    # Open the github_userdata file and extract data
-    with open(payload_dirpath + "github_userdata", "r") as github_data_file:
-        github_data_array = github_data_file.readlines()
-    for line in github_data_array:
+    # Open the serverdata file and find the GitHub data
+    with open(cwd + "/serverdata", "r") as serverdata_file:
+        serverdata_array = serverdata_file.readlines()
+    for line in serverdata_array:
         if line.strip()[0] is not "#":
-            line = line.split(" ")
-            github_data.update({"github_username" : line[1].strip()})
-            print "GitHub username: " + github_data['github_username']
-            github_data.update({"github_reponame" : line[0].strip()})
-            print "GitHub repository name: " + github_data['github_reponame']
+            if line.split()[0] == "GitHubUser":
+                github_data.update({"github_username" : line.split()[1]})
+                print "GitHub username: " + github_data['github_username']
+            if line.split()[0] == "GitHubRepo":
+                github_data.update({"github_reponame" : line.split()[1]})
+                print "GitHub repository name: " + github_data['github_reponame']
 
     if "github_username" not in github_data or "github_reponame" not in github_data:
-        print "[Please add your GitHub data to the " + payload_dirpath + "github_userdata file...]"
+        print "[You did add your GitHub info to the serverdata file...]"
         exit()
     # Print message to stdout
     print "[Server data has been parsed to get the GitHub data...]"
@@ -953,6 +954,7 @@ if __name__ == '__main__':
             ],
             # Files that have GitHub data to be replaced
             "github_data" : [
+                cwd + "/payloads/github_userdata",
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/site_ownership",
                 cwd + "/payloads/site_permissions",

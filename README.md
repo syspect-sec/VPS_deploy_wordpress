@@ -11,12 +11,12 @@ You should have received a copy of the GNU General Public License along with thi
 
 ## Overview Description
 
-VPS Deploy WordPress is to quickly deploy a CentOS VPS as a web-server for a WordPres site. Steps to configure the payload are listed below including detailed descriptions of each element of VPS Deploy WordPress. Security is the focus of VPS Deploy WordPress.  VPS Deploy WordPress can automatically clone a GitHub repository that contains your WordPress site onto the server and run any additional scripts required to initialize your web-application. VPS Deploy WordPress will also modify the database install script and WordPress installation to change the URL from your development environment to the live site URL.  You can also export the live site including any changes back to your local development environment to backup and maintain a development environment.
+VPS Deploy WordPress is to quickly deploy a CentOS 7 VPS as a web-server for a WordPress site. Steps to configure the payload are listed below including detailed descriptions of each element of VPS Deploy WordPress. Security is the focus of VPS Deploy WordPress.  VPS Deploy WordPress can automatically clone a GitHub repository that contains your WordPress site onto the server, install databases in MySQL, run any additional scripts required, and setup remote backups of the site changes and MySQL databases. VPS Deploy WordPress can also migrate your site's URL from your development environment to the live site URL, and back.  You can also export the live site including any changes back to your local development environment to backup and maintain a feature testing development environment.
 
 ### Things you need to do:
 
-1. Setup a VPS server with SSH access for root
-2. Configure settings for several files in the payloads directory
+1. Setup a Centos 7 VPS server with SSH access for root
+2. Configure the 'serverdata' file in the root directory of VPS_deploy
 3. Deploy the payload **VPS_deploy -remotedeploy -p \<password\>**
 
 **WARNING - you need to securely store the critical information output in step 3**
