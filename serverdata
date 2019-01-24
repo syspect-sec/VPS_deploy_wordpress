@@ -7,3 +7,7 @@
 # DomainName yoursite.com
 #EmailAddress your@emailaddress.com
 #RemoteBackupIP 123.456.78.9
+IP 9.78.456.123
+DomainName mysite.com
+EmailAddress my@emailaddress.com
+RemoteBackupIP 1.2.3.4

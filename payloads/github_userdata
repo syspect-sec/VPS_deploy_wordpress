@@ -1,3 +1,4 @@
 # This file contains the repository name and username for GitHub repository to be cloned
 # Sample:
-# reponame githubusername
+# github_reponame github_username
+github_reponame github_username

@@ -8,10 +8,10 @@
 # Sample 1: 440 on all files recursively in directory path /var/www/
 # <file> -R 440 /var/www/html/
 # Sample 2: 770 on only a single directory
-# <dir> 770 /var/www/html/<github_repo_name>/uploads/
+# <dir> 770 /var/www/html/<github_reponame>/uploads/
 # Sample 3: recursive read for SELinux on the entire web-application directory
-# <se-dir-read> -R /var/www/html/<github_repo_name>/
+# <se-dir-read> -R /var/www/html/<github_reponame>/
 # Sample 4: read write permissions on a specific directory
-# <se-dir-read-write> /var/www/html/<github_repo_name>/logs/
+# <se-dir-read-write> /var/www/html/<github_reponame>/logs/
 # All files in the web-root directory get written with Apache read only
-<file> -R  0707 /var/www/html/<github_repo_name>/
+<file> -R  0707 /var/www/html/<github_reponame>/

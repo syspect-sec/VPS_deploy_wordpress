@@ -48,23 +48,31 @@ def get_server_data_from_file(cwd):
     # Create an array to hold the serverdata
     server_data = {}
 
-    # Open the serverdata file and find the uri
+    # Open the serverdata file and find the server data
     with open(cwd + "/serverdata", "r") as serverdata_file:
         serverdata_array = serverdata_file.readlines()
     for line in serverdata_array:
         if line.strip()[0] is not "#":
-            if "IP" in line:
+            if line.split()[0] == "IP":
                 server_data.update({'IP' : line.split()[1]})
-            if "DomainName" in line:
+                print "Server IP: " + server_data['IP']
+            if line.split()[0] == "DomainName":
                 server_data.update({'site_URI' : line.split()[1]})
-            if "EmailAddress" in line:
+                print "Domain name: " + server_data['site_URI']
+            if line.split()[0] == "EmailAddress":
                 server_data.update({'admin_email' : line.split()[1]})
-            if "RemoteBackupIP" in line:
-                server_data.update({'backup_IP' : line.split()[1]})
+                print "Admin email: " + server_data['admin_email']
+            if line.split()[0] == "RemoteBackupIP":
+                server_data.update({'remote_backup_IP' : line.split()[1]})
+                print "Remote server IP " + server_data['remote_backup_IP']
     # Check to see the serverdata has been modified
     if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data:
         print "[You did not modify the " + cwd + "/serverdata" + "...]"
         exit()
+
+    # Set a false flag if there is no remote server IP
+    if "remote_backup_IP" not in server_data:
+        server_data.update({'remote_backup_IP' : False})
 
     # Print message to stdout
     print "[Server data has been parsed to get the site URI...]"
@@ -84,7 +92,9 @@ def get_github_data_from_file(payload_dirpath):
         if line.strip()[0] is not "#":
             line = line.split(" ")
             github_data.update({"github_username" : line[1].strip()})
+            print "GitHub username: " + github_data['github_username']
             github_data.update({"github_reponame" : line[0].strip()})
+            print "GitHub repository name: " + github_data['github_reponame']
 
     if "github_username" not in github_data or "github_reponame" not in github_data:
         print "[Please add your GitHub data to the " + payload_dirpath + "github_userdata file...]"
@@ -507,18 +517,9 @@ def initialize_payload(args_array):
     with open(args_array['payload_init_filename'], "r") as init_as:
         init_as_contents = init_as.readlines()
 
-    # Check if payload is still default or has been changed
-    if init_as_contents[0].strip() != "default":
-        # Set the current site IP and URI to be replaced from the file
-        args_array['current_site_IP'] = init_as_contents[0].strip()
-        args_array['current_site_URI'] = init_as_contents[1].strip()
-        args_array['current_admin_email'] = init_as_contents[2].strip()
-        args_array['current_remote_backup_IP'] = args_array['remote_backup_ip']
-        # Set the current GitHub username and repo name to be replaced from the file
-        args_array['current_github_username'] = init_as_contents[3].strip()
-        args_array['current_github_reponame'] = init_as_contents[4].strip()
     # If the site has not been initialized yet
-    else:
+    if len(init_as_contents) == 1 and init_as_contents[0].strip() == "default":
+        print "[Deafult configuration detected...]"
         # Set the current site IP to be replaced as the default
         args_array['current_site_IP'] = args_array['default_site_IP']
         args_array['current_site_URI'] = args_array['default_site_URI']
@@ -527,25 +528,35 @@ def initialize_payload(args_array):
         # Set the current GitHub username and repo name to be replaced from the file
         args_array['current_github_username'] = args_array['default_github_username']
         args_array['current_github_reponame'] = args_array['default_github_reponame']
+    # Check if payload is still default or has been changed
+    else:
+        print "[Existing configuration detected...]"
+        # Set the current site IP and URI to be replaced from the file
+        args_array['current_site_IP'] = init_as_contents[0].strip()
+        args_array['current_site_URI'] = init_as_contents[1].strip()
+        args_array['current_admin_email'] = init_as_contents[2].strip()
+        args_array['current_remote_backup_IP'] = args_array['remote_backup_IP']
+        # Set the current GitHub username and repo name to be replaced from the file
+        args_array['current_github_username'] = init_as_contents[3].strip()
+        args_array['current_github_reponame'] = init_as_contents[4].strip()
+
 
     # Write the new serverdata configuration of payload into .init_as
     with open(args_array['payload_init_filename'], "w") as init_as:
+        print "[Storing new configuration settings...]"
         init_as.write(args_array['site_IP'] + "\n")
         init_as.write(args_array['site_URI'] + "\n")
         init_as.write(args_array['admin_email'] + "\n")
         init_as.write(args_array['github_username'] + "\n")
         init_as.write(args_array['github_reponame'] + "\n")
-
-    # Open the remote_serverdata file to see if default has already been overwritten
-    with open(args_array['payload_remote_serverdata_filename'], "r") as remote_serverdata:
-        remote_serverdata_contents = init_as.readlines()
+        print "[Finished storing new configuration settings...]"
 
     # If the remote server has been specified in the serverdata file
     # replace it into the remote_serverdata file
-    if "remote_backup_ip" in args_array:
+    if "remote_backup_IP" in args_array:
         # Write the new serverdata configuration of payload into .init_as
-        with open(args_array['payload_init_filename'], "w") as remote_serverdata:
-            remote_serverdata.write(args_array['remote_backup_ip'])
+        with open(args_array['payload_remote_serverdata_filename'], "w") as remote_serverdata:
+            remote_serverdata.write(args_array['remote_backup_IP'])
 
     # Log and Stdout the server data changes to be made
     if args_array['current_site_IP'] != args_array['site_IP']:
@@ -555,19 +566,24 @@ def initialize_payload(args_array):
         print "- Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI']
         logger.info("- Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'])
     if args_array['current_admin_email'] != args_array['admin_email']:
-        print "- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['site_admin_email']
-        logger.info("- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['site_admin_email'])
-    if args_array['current_remote_backup_IP'] != args_array['remote_backup_ip']:
-        print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_ip']
-        logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_ip'])
+        print "- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email']
+        logger.info("- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email'])
+    if args_array['current_remote_backup_IP'] != args_array['remote_backup_IP']:
+        print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP']
+        logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
     # Log and Stdout the GitHub changes to be made
     if args_array['current_github_username'] != args_array['current_github_username'] or args_array['current_github_reponame'] != args_array['current_github_reponame']:
         print "- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame']
         logger.info("- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame'])
 
+    # Set a variable to count the number of replacements found
+    replacement_count = 0
+
     # Rewrite the payload files with the new site IP and URL
-    for key, vales in args_array['initialize_files_array']:
+    for key, values in args_array['initialize_files_array'].iteritems():
+        print "- Modifying " + key + " type files"
         for item in values:
+            print item
             # For any directories in the list
             if os.path.isdir(item):
                 for filename in os.listdir(item):
@@ -579,6 +595,8 @@ def initialize_payload(args_array):
             if os.path.isfile(item):
                 # Call function to adjust file for migration
                 replacement_count += initialize_single_file(key, args_array, item)
+
+    print "[ " + str(replacement_count) + " total replacements were found...]"
 
 # Recieves a filename and looks for infile and changes to outfile
 def initialize_single_file(key, args_array, filename):
@@ -614,7 +632,7 @@ def initialize_single_file(key, args_array, filename):
     with open(filename + ".init", "w") as outfile:
         for line in initialized_file_contents_array:
             # Do not change comment lines
-            if line.strip()[0] != "#":
+            if line.strip() != "#":
                 # Replace server data
                 if key == "serverdata":
                     # Replace any modified instances of the current/default site IP address
@@ -647,7 +665,7 @@ def initialize_single_file(key, args_array, filename):
                     # Replace any modified instances of the current/default remote backup IP
                     if args_array['current_remote_backup_IP'] in line:
                         print "[Found remote server IP to be replaced...]"
-                        line = line.replace(args_array['current_github_username'],args_array['github_username'])
+                        line = line.replace(args_array['current_remote_backup_IP'],args_array['remote_backup_IP'])
                         replacement_count += 1
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:
@@ -671,6 +689,10 @@ def prepare_args_array(args_array):
     args_array.update({"site_URI" : server_data['site_URI']})
     # IP of the server to host the site
     args_array.update({"site_IP" : server_data['IP']})
+    # Admin email of the server to host the site
+    args_array.update({"admin_email" : server_data['admin_email']})
+    # Remote backup server IP
+    args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
     # Update the name of the sites_enabled file for Apache based on site_URI
     args_array["payload_filename_array"]["v_host_site_file"]["destination_path"] = "/etc/sites_enabled/" + server_data['site_URI'] + ".conf"
 
@@ -904,25 +926,25 @@ if __name__ == '__main__':
         # Files to check during an initialization of the payload
         "initialize_files_array" : {
             # Files that have server data to be replaced
-            "serverdata" : {
-                cwd + "payloads/httd.conf",
-                cwd + "payloads/V_host.conf",
-                cwd + "payloads/remote_serverdata",
+            "serverdata" : [
+                cwd + "/payloads/httpd.conf",
+                cwd + "/payloads/V_host.conf",
+                cwd + "/payloads/remote_serverdata",
 
-            },
+            ],
             # Files that have GitHub data to be replaced
-            "github_data" : {
-                cwd + "payloads/httd.conf",
-                cwd + "payloads/site_ownership",
-                cwd + "payloads/site_permissions",
-                cwd + "payloads/site_permissions_open",
-                cwd + "payloads/V_host.conf",
-            },
+            "github_data" : [
+                cwd + "/payloads/httpd.conf",
+                cwd + "/payloads/site_ownership",
+                cwd + "/payloads/site_permissions",
+                cwd + "/payloads/site_permissions_open",
+                cwd + "/payloads/V_host.conf",
+            ],
             # Files that have remote backup server data to be replaced
-            "remote_serverdata" : {
-                cwd + "payloads/remote_serverdata",
-                cwd + "payloads/ssh_identity_file"
-            }
+            "remote_serverdata" : [
+                cwd + "/payloads/remote_serverdata",
+                cwd + "/payloads/ssh_identity_file"
+            ]
         },
         # Files to check during a migrate
         "migrate_files_array" : [
