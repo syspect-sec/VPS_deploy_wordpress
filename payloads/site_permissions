@@ -8,11 +8,11 @@
 # Sample 1: 0440 on all files recursively in directory path /var/www/
 # <file> -R 0440 /var/www/html/
 # Sample 2: 0770 on only a single directory
-# <dir> 0770 /var/www/html/github_reponame/uploads/
+# <dir> 0770 /var/www/html/<github_reponame>/uploads/
 # Sample 3: recursive read for SELinux on the entire web-application directory
-# <se-dir-read> -R /var/www/html/github_reponame/
+# <se-dir-read> -R /var/www/html/<github_reponame>/
 # Sample 4: read write permissions on a specific directory
-# <se-dir-read-write> /var/www/html/github_reponame/logs/
+# <se-dir-read-write> /var/www/html/<github_reponame>/logs/
 #
 # All files in the mail WordPress directory get written with 644
 #

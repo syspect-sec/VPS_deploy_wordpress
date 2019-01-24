@@ -517,6 +517,10 @@ def initialize_payload(args_array):
     with open(args_array['payload_init_filename'], "r") as init_as:
         init_as_contents = init_as.readlines()
 
+    # If no remote backup IP has been included then set to default value
+    if args_array['remote_backup_IP'] == False:
+        args_array['remote_backup_IP'] = args_array['default_remote_backup_IP']
+
     # If the site has not been initialized yet
     if len(init_as_contents) == 1 and init_as_contents[0].strip() == "default":
         print "[Deafult configuration detected...]"
@@ -524,7 +528,7 @@ def initialize_payload(args_array):
         args_array['current_site_IP'] = args_array['default_site_IP']
         args_array['current_site_URI'] = args_array['default_site_URI']
         args_array['current_admin_email'] = args_array['default_admin_email']
-        args_array['current_remote_backup_IP'] = args_array['default_site_IP']
+        args_array['current_remote_backup_IP'] = args_array['default_remote_backup_IP']
         # Set the current GitHub username and repo name to be replaced from the file
         args_array['current_github_username'] = args_array['default_github_username']
         args_array['current_github_reponame'] = args_array['default_github_reponame']
@@ -582,6 +586,15 @@ def initialize_payload(args_array):
     # Rewrite the payload files with the new site IP and URL
     for key, values in args_array['initialize_files_array'].iteritems():
         print "- Modifying " + key + " type files"
+
+        # If initializing the serverdata_file then create a replacement for the http redirect from the raw IP
+        if key == "serverdata":
+            current_IP_sub_array = args_array['current_site_IP'].replace("<","").replace(">","").split(".")
+            new_IP_sub_array = args_array['site_IP'].split(".")
+            args_array['current_httpd_redirect_IP'] = "^" + current_IP_sub_array[0] + "\\." + current_IP_sub_array[1] + "\\." + current_IP_sub_array[2] + "\\." + current_IP_sub_array[3] + "$"
+            args_array['new_httpd_redirect_IP'] = "^" + new_IP_sub_array[0] + "\\." + new_IP_sub_array[1] + "\\." + new_IP_sub_array[2] + "\\." + new_IP_sub_array[3] + "$"
+            print args_array['current_httpd_redirect_IP'] + " - " + args_array['new_httpd_redirect_IP']
+
         for item in values:
             print item
             # For any directories in the list
@@ -622,7 +635,6 @@ def initialize_single_file(key, args_array, filename):
     for line in infile_contents:
         # If the line is empty
         if len(line.strip()) == 0:
-            print "\n"
             initialized_file_contents_array.append("\n")
         else:
             line = line.strip("\n")
@@ -638,34 +650,39 @@ def initialize_single_file(key, args_array, filename):
                     # Replace any modified instances of the current/default site IP address
                     if args_array['current_site_IP'] in line:
                         print "[Found IP to be replaced...]"
-                        line = line.replace(args_array['current_site_IP'],args_array['site_IP'])
+                        line = line.replace(args_array['current_site_IP'], args_array['site_IP'])
                         replacement_count += 1
                     # Replace any modified instances of the current/default site URI
                     if args_array['current_site_URI'] in line:
                         print "[Found URI to be replaced...]"
-                        line = line.replace(args_array['current_site_URI'],args_array['site_URI'])
+                        line = line.replace(args_array['current_site_URI'], args_array['site_URI'])
                         replacement_count += 1
                     # Replace any modified instances of the current/default admin email address
                     if args_array['current_admin_email'] in line:
                         print "[Found admin email to be replaced...]"
-                        line = line.replace(args_array['current_admin_email'],args_array['admin_email'])
+                        line = line.replace(args_array['current_admin_email'], args_array['admin_email'])
+                        replacement_count += 1
+                    # Replace any instances of the current/default http mod rewrite regex
+                    if args_array['current_httpd_redirect_IP'] in line:
+                        print "[Found IP regex to be replaced...]"
+                        line = line.replace(args_array['current_httpd_redirect_IP'], args_array['new_httpd_redirect_IP'])
                         replacement_count += 1
                 if key == "github_data":
                     # Replace any modified instances of the current/default GitHub userdata
                     if args_array['current_github_username'] in line:
                         print "[Found GitHub username to be replaced...]"
-                        line = line.replace(args_array['current_github_username'],args_array['github_username'])
+                        line = line.replace(args_array['current_github_username'], args_array['github_username'])
                         replacement_count += 1
                     # Replace any modified instances of the current/default GitHub repository name
                     if args_array['current_github_reponame'] in line:
                         print "[Found GitHub reponame to be replaced...]"
-                        line = line.replace(args_array['current_github_reponame'],args_array['github_reponame'])
+                        line = line.replace(args_array['current_github_reponame'], args_array['github_reponame'])
                         replacement_count += 1
-                if key == "remote_serverdata_data":
+                if key == "remote_serverdata":
                     # Replace any modified instances of the current/default remote backup IP
                     if args_array['current_remote_backup_IP'] in line:
                         print "[Found remote server IP to be replaced...]"
-                        line = line.replace(args_array['current_remote_backup_IP'],args_array['remote_backup_IP'])
+                        line = line.replace(args_array['current_remote_backup_IP'], args_array['remote_backup_IP'])
                         replacement_count += 1
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:
@@ -891,6 +908,8 @@ if __name__ == '__main__':
         "default_site_URI" : "<yoursite.com>",
         # Default IP address in the vanilla version of the package
         "default_site_IP" : "<123.456.78.9>",
+        # Default remote backup server IP address in the vanilla version of the package
+        "default_remote_backup_IP" : "<default_remote_backup_IP>",
         # Default admin emaill address in the vanilla version of the package
         "default_admin_email" : "<your@emailaddress.com>",
         # Default github username in the vanilla version of the package
