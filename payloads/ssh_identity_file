@@ -1,3 +1,7 @@
 Host 192.30.253.112
   Port 22
   IdentityFile ~/.ssh/id_rsa_github
+
+Host <123.456.78.9>
+  Port 22
+  IdentityFile ~/.ssh/id_rsa_remote

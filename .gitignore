@@ -9,6 +9,8 @@ tmp/
 # Ignore key files
 payloads/id_rsa_github
 payloads/id_rsa_github.pub
+payloads/id_rsa_backup
+payloads/id_rsa_backup.pub
 
 # Ignore log file
 log
