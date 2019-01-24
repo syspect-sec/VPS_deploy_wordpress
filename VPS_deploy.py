@@ -629,7 +629,7 @@ def initialize_single_file(key, args_array, filename):
             initialized_file_contents_array.append(line)
 
     # Rewrite the file arrray into the new file
-    with open(filename + ".init", "w") as outfile:
+    with open(filename, "w") as outfile:
         for line in initialized_file_contents_array:
             # Do not change comment lines
             if line.strip() != "#":
