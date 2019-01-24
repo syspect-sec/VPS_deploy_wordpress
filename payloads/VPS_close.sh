@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+#
+# VPS_close.sh
+# Close the Payload
+#
+# GitHub: https://github.com/rippledj/VPS_deploy_wordpress
+# Author: Joseph Lee
+# Email: joseph@ripplesoftware.ca
+#
 # Load a list of directories that will require special permissions
 echo "[Closing permisssions for web-root...]"
 while read -r -a dirperm

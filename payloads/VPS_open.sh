@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+#
+# VPS_open.sh
+# Open the Payload
+#
+# GitHub: https://github.com/rippledj/VPS_deploy_wordpress
+# Author: Joseph Lee
+# Email: joseph@ripplesoftware.ca
+#
 # Load a list of directories that will require special permissions
 echo "[Opening permisssions for development access...]"
 while read -r -a dirperm

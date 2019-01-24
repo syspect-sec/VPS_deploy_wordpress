@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+#
+# VPS_apachectl.sh
+# Restart Apache
+#
+# GitHub: https://github.com/rippledj/VPS_deploy_wordpress
+# Author: Joseph Lee
+# Email: joseph@ripplesoftware.ca
+#
 # Apachectl Script accepts the command then starts or restarts apache
 if [ $1 = "restart" ]; then
   # Restart Apache

@@ -56,9 +56,14 @@ def get_site_uri_from_file(cwd):
             if "IP" in line:
                 server_data.update({'IP' : line.split()[1]})
             if "DomainName" in line:
-                server_data.update({'domain_name' : line.split()[1]})
+                server_data.update({'site_URI' : line.split()[1]})
+    # Check to see the serverdata has been modified
+    if "IP" not in server_data or "site_URI" not in server_data:
+        print "[You did not modify the " + cwd + "/serverdata" + "...]"
+        exit()
+
     # Print message to stdout
-    print "[Server data parsed to get the site URI...]"
+    print "[Server data has been parsed to get the site URI...]"
     # Return the dictionary with serverdata
     return server_data
 
@@ -68,16 +73,20 @@ def get_github_data_from_file(payload_dirpath):
     # Create an array to hold the serverdata
     github_data = {}
 
-    # Open the serverdata file and find the uri
-    with open(payload_dirpath + "/github_userdata", "r") as github_data_file:
+    # Open the github_userdata file and extract data
+    with open(payload_dirpath + "github_userdata", "r") as github_data_file:
         github_data_array = github_data_file.readlines()
     for line in github_data_array:
         if line.strip()[0] is not "#":
             line = line.split(" ")
             github_data.update({"github_username" : line[1].strip()})
             github_data.update({"github_reponame" : line[0].strip()})
+
+    if "github_username" not in github_data or "github_reponame" not in github_data:
+        print "[Please add your GitHub data to the " + payload_dirpath + "github_userdata file...]"
+        exit()
     # Print message to stdout
-    print "[Server data parsed to get the GitHub data...]"
+    print "[Server data has been parsed to get the GitHub data...]"
     # Return the dictionary with serverdata
     return github_data
 
@@ -496,12 +505,12 @@ def initialize_payload(args_array):
     # Check if payload is still default or has been changed
     if init_as_contents[0].strip() != "default":
         # Set the current site IP and URI to be replaced from the file
-        args_array['current_site_IP'] = init_as_contents[0]
-        args_array['current_site_URI'] = init_as_contents[1]
+        args_array['current_site_IP'] = init_as_contents[0].strip()
+        args_array['current_site_URI'] = init_as_contents[1].strip()
         # Set the current GitHub username and repo name to be replaced from the file
-        args_array['current_github_username'] = init_as_contents[2]
-        args_array['current_github_reponame'] = init_as_contents[3]
-    # If the site has not been init yet
+        args_array['current_github_username'] = init_as_contents[2].strip()
+        args_array['current_github_reponame'] = init_as_contents[3].strip()
+    # If the site has not been initialized with server and GitHub data yet
     else:
         # Set the current site IP to be replaced as the default
         args_array['current_site_IP'] = args_array['default_site_IP']
@@ -517,12 +526,15 @@ def initialize_payload(args_array):
         init_as.write(args_array['github_reponame'] + "\n")
 
     # Log and Stdout the changes to be made
-    print "[Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP'] + "...]"
-    logger.info("[Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP'] + "...]")
-    print "[Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'] + "...]"
-    logger.info("[Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'] + "...]")
-    print "[Initializing the payload GitHub repo from " + args_array['current_github_username'] + "/" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + "/" + args_array['github_reponame'] + "...]"
-    logger.info("[Initializing the payload GitHub repo from " + args_array['current_github_username'] + "/" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + "/" + args_array['github_reponame'] + "...]")
+    if args_array['current_site_IP'] != args_array['site_IP']:
+        print "- Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP']
+        logger.info("- Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP'])
+    if args_array['current_site_URI'] != args_array['site_URI']:
+        print "- Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI']
+        logger.info("- Initializing the payload URI from " + args_array['current_site_URI'] + " to " + args_array['site_URI'])
+    if args_array['current_github_username'] != args_array['current_github_username'] or args_array['current_github_reponame'] != args_array['current_github_reponame']:
+        print "- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame']
+        logger.info("- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame'])
 
     # Rewrite the payload files with the new site IP and URL
     for item in args_array['initialize_files_array']:
@@ -568,11 +580,6 @@ def initialize_single_file(args_array, filename):
             line = line.strip("\n")
             initialized_file_contents_array.append(line)
 
-    # Go though file and overwrite old file
-    for line in initialized_file_contents_array:
-        if "ripplesoftwaresandbox.ca" in line:
-            replacement_count += 1
-
     # Rewrite the file arrray into the new file
     with open(filename + ".init", "w") as outfile:
         for line in initialized_file_contents_array:
@@ -606,6 +613,31 @@ def initialize_single_file(args_array, filename):
     print "[" + str(replacement_count) +  " replacements were found...]"
     # Return the replacement count to be tracked
     return replacement_count
+
+# Prepares the arguments array for loading a payload or migrating a payload
+def prepare_args_array(args_array):
+
+    # Collect the serverdata from config file
+    server_data = get_site_uri_from_file(cwd)
+    # Update the relevant entries in args_array
+    # URI of the web-application to be deployed on the VPS
+    args_array.update({"site_URI" : server_data['site_URI']})
+    # IP of the server to host the site
+    args_array.update({"site_IP" : server_data['IP']})
+    # Update the name of the sites_enabled file for Apache based on site_URI
+    args_array["payload_filename_array"]["v_host_site_file"]["destination_path"] = "/etc/sites_enabled/" + server_data['site_URI'] + ".conf"
+
+    # Github data is only available if payload is closed
+    if is_payload_open(args_array):
+        github_data = get_github_data_from_file(payload_dirpath)
+        # Default location of the local WordPress site files
+        default_local_site_dirpath = cwd + "/var/www/html/" + github_data['github_reponame'] + "/",
+        # GitHub username and repo name
+        args_array.update({"github_username" : github_data['github_username']})
+        args_array.update({"github_reponame" : github_data['github_reponame']})
+
+    # Return the updated args array
+    return args_array
 
 # Used to check if the payload is loaded or open
 def is_payload_open(args_array):
@@ -769,25 +801,22 @@ def setup_logger(args_array):
     log_handler.setFormatter(formatter)
     logger.addHandler(log_handler)
 
-
 ## Main Function Starts Here ##
 if __name__ == '__main__':
+
+    # Prints the logo title
+    print ascii_title()
 
     # Define some working directory variables
     cwd = os.getcwd()
     payload_dirpath = cwd + "/payloads/"
-    # Collect the serverdata from config file
-    server_data = get_site_uri_from_file(cwd)
-    github_data = get_github_data_from_file(payload_dirpath)
-    # Default location of the local WordPress site files
-    default_local_site = cwd + "/var/www/html/" + github_data['github_reponame'] + "/",
 
     ## Declare required variables for filepath and config filename
     args_array = {
         # VPS Deploy flags
         "app_name" : "VPS Deploy",
         "sandbox_mode" : True,
-        "log_filename" : "log",
+        "log_filename" : cwd + "log",
         "cwd" : cwd + "/",
         # Default site URL in the vanilla version of the package
         "default_site_URI" : "yoursite.com",
@@ -797,13 +826,6 @@ if __name__ == '__main__':
         "default_github_username" : "github_username",
         # Default github repo username in the vanilla version of the package
         "default_github_reponame" : "github_reponame",
-		# URI of the web-application to be deployed on the VPS
-        "site_URI" : server_data['domain_name'],
-        # IP of the server to host the site
-        "site_IP" : server_data['IP'],
-        # GitHub username and repo name
-        "github_username" : github_data['github_username'],
-        "github_reponame" : github_data['github_reponame'],
         # Allowed command line args
 		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
         # Command args that are not allowed with purge
@@ -813,7 +835,7 @@ if __name__ == '__main__':
         # File to check if payload locked or not
         "payload_ready_filename" : ".passcheck",
         # File to check if payload is still default or has been init
-        "payload_init_filename" : ".init_as",
+        "payload_init_filename" : payload_dirpath + ".init_as",
         # Filepath to zipped compressed payload
         "compressed_payload_filename" : "payload",
         # Filename of the main VPS_deploy script
@@ -823,7 +845,7 @@ if __name__ == '__main__':
         # Filename of script to update GitHub repository
         "VPS_update_git_filename" : "payloads/VPS_update_git.sh",
         # Filename of script to update GitHub repository
-        "VPS_backup_filename" : "payloads/VPS_backup_git.sh",
+        "VPS_backup_filename" : "payloads/VPS_remote_backup.sh",
         # Filename of script to open the permissions for dev
         "VPS_opendev_filename" : "VPS_open.sh",
         # Filename of script to close permissions
@@ -831,7 +853,10 @@ if __name__ == '__main__':
         # Files to check during an initialization of the payload
         "initialize_files_array" : [
             cwd + "payloads/httd.conf",
-            cwd + "payloads/site_ownership"
+            cwd + "payloads/site_ownership",
+            cwd + "payloads/site_permissions",
+            cwd + "payloads/site_permissions_open",
+            cwd + "payloads/V_host.conf"
         ],
         # Files to check during a migrate
         "migrate_files_array" : [
@@ -846,7 +871,7 @@ if __name__ == '__main__':
             "payloads/VPS_apachectl.sh",
             "payloads/apache_config_locker.py",
             "payloads/VPS_update_git.sh",
-            "payloads/VPS_backup_git.sh"
+            "payloads/VPS_remote_backup.sh"
         ],
         # Array of all possible files in required_files
         "payload_filename_array" : {
@@ -859,7 +884,7 @@ if __name__ == '__main__':
             "site_permissions" : { "required" : 1, "payload_filename" : payload_dirpath + "site_permissions", "destination_path" : None},
             "userdata" : { "required" : 1, "payload_filename" : payload_dirpath + "userdata", "destination_path" : None},
             "apache_config_file" : { "required" : 1, "payload_filename" : payload_dirpath + "httpd.conf", "destination_path" : "/etc/httpd/conf/httpd.conf"},
-            "v_host_site_file" : { "required" : 0, "payload_filename" : payload_dirpath + "vhost.conf", "destination_path" : "/etc/sites_enabled/" + site_URI + ".conf"},
+            "v_host_site_file" : { "required" : 0, "payload_filename" : payload_dirpath + "vhost.conf", "destination_path" : None},
             "php_config_file" : { "required" : 1, "payload_filename" : payload_dirpath + "php.ini", "destination_path" : "/etc/php.ini"},
             "ssh_config_file" : { "required" : 1, "payload_filename" : payload_dirpath + "ssh_config", "destination_path" : "/etc/ssh/ssh_config"},
             "sshd_config_file" : { "required" : 1, "payload_filename" : payload_dirpath + "sshd_config", "destination_path" : "/etc/ssh/sshd_config"}
@@ -889,20 +914,19 @@ if __name__ == '__main__':
     ## Check return from command line arg bulder and if no command line args
     # If command_args failed, print message
     if args_array['command_args'] == False:
-        # Prints the logo title
-        print ascii_title()
         # Print the help output
         print_command_help_output()
+        exit()
 
     # Main function post initial check starts here
     else:
-        # Prints the logo title
-        print ascii_title()
 
         # If the VPS_deploy ready to be sent to the server
         if args_array['command_args']['command'] == "load":
             # Check if payload is open
             if is_payload_open(args_array):
+                # Prepare the args array with site and repository data
+                args_array = prepare_args_array(args_array)
                 # Load the payload
                 args_array = load_payload(args_array)
             else:
@@ -947,6 +971,9 @@ if __name__ == '__main__':
         # If VPS_deploy is on the client and ready to be deployed
         elif args_array['command_args']['command'] == "remotedeploy":
 
+            # Prepare the args array with site and repository data
+            args_array = prepare_args_array(args_array)
+
             # Check if payload is open
             if is_payload_open(args_array):
                 print "[Payload not loaded for deployment...loading payload...]"
@@ -982,6 +1009,10 @@ if __name__ == '__main__':
             else:
                 print "[Could not locate the script to update GitHub repository...]"
 
+            print "[Closing payload...]"
+            # Close the payload
+            close_payload(args_array)
+
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "opendev":
             # Check for the location of the script and run it
@@ -1013,6 +1044,10 @@ if __name__ == '__main__':
             # Check for the location of the script and run it
             if os.path.isfile("payloads/" + args_array['VPS_backup_filename']):
                 subprocess.call("payloads/" + args_array['VPS_backup_filename'], shell=True)
+
+            print "[Closing payload...]"
+            # Close the payload
+            close_payload(args_array)
 
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "migrate":

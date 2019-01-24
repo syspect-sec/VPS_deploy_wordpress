@@ -1,5 +1,14 @@
 #!/bin/bash
 #
+#
+# VPS_deploy.sh
+# Main Server Deployment Script
+#
+# GitHub: https://github.com/rippledj/VPS_deploy_wordpress
+# Author: Joseph Lee
+# Email: joseph@ripplesoftware.ca
+#
+#
 # Set the timezone and configure time
 #
 # Install the NTP date
@@ -115,10 +124,10 @@ echo "[Adding Webstatic repositories...]"
 # TODO: Do I need the fedora repository??
 #rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 #yum-config-manager --add-repo https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-#yum-config-manager --add-repo https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-# Step 2: Install PHP 7.1 and necessary extensions
-yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
+rpm -Uvh http://vault.centos.org/7.0.1406/extras/x86_64/Packages/epel-release-7-5.noarch.rpm
+yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+yum --enablerepo=remi,remi-php55 -y install php php-common
+yum --enablerepo=remi,remi-php55 -y install php-cli php-pdo php-mysql php-mysqlnd php-gd php-mcrypt php-xml php-simplexml php-zip
 echo "[PHP installed...]"
 # Install MySQL / MariaDB
 # NOTE: Check that differences between MySQL and MariaDB
@@ -443,10 +452,13 @@ if [ -s payloads/mysql_userdata ]; then
     if [ ${mysqlpass[0]} = "backup" ]; then
       mkdir /var/www/backups
       chmod o+w /var/www/backups
-      crontab -l | { cat; echo "10 0 * * 0 mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/backups/db_backup_\$(date +\%m_\%d_\%Y).sql.gz"; } | crontab -
+      crontab -l | { cat; echo "0 0 * * 1 mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/backups/db_backup_\$(date +\%m_\%d_\%Y).sql.gz"; } | crontab -
     fi
   done < payloads/mysql_userdata
 fi
+# Install GitHub push and scp database backup to remote server
+echo "[Adding GitHub and remote database backup to crontabs...]"
+crontab -l | { cat; echo "0 5 * * 1 python ./root/VPS_deploy.py -backup -p $1"; } | crontab -
 echo "[Finished adding crontabs to schedule...]"
 #
 # SSHD Conifiguration
@@ -554,7 +566,7 @@ do
     if [ ${finish[0]} = "close" ] && [ ${finish[1]} = "1" ]; then
       # Close the payload
       echo "[Closing the payload...]"
-      python VPS_deploy.py -load -p $5
+      python ./VPS_deploy.py -load -p $5
       echo "[Payload closed...]"
     fi
   fi

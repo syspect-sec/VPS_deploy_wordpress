@@ -1,15 +1,15 @@
 #!/bin/bash
 #
 #
-# VPS_update_git.sh
-# Update Live Site from GitHub
+# VPS_remote_backup.sh
+# Remote Backup Script
 #
 # GitHub: https://github.com/rippledj/VPS_deploy_wordpress
 # Author: Joseph Lee
 # Email: joseph@ripplesoftware.ca
 #
 # Move the payload and main script to the server, and run remotely
-echo "[Updating GitHub repository...]"
+echo "[Pushing changes to GitHub repository...]"
 if [ -s payloads/id_rsa_github ]
 then
     echo "[Starting to process GitHub repository update...]"
@@ -40,12 +40,13 @@ then
       # Eliminate comments
       if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
         # Clone the repo for the site to be installed
-        echo "[Fetching GitHub repository...]"
+        echo "[Adding changes to GitHub repository...]"
         cd /var/www/html/${githubuser[0]}
-        git fetch --all
-        echo "[Resetting GitHub repository...]"
-        git reset --hard origin/master
-        echo "[Finished Updating GitHub repository...]"
+        git add -A
+        echo "[Commiting changes to GitHub repository...]"
+        git commit -m "Auto commit from server on \$(date +\%m_\%d_\%Y)"
+        echo "[Pushing commits to GitHub repository...]"
+        git push origin master
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"
@@ -56,7 +57,52 @@ then
       fi
     done < payloads/github_userdata
 fi
-echo "[VPS_deploy has updated your GitHub repository...]"
+echo "[VPS_deploy has finished pushing changes to GitHub repository...]"
+#
+# Push the database backup to remote server
+#
+echo "[Starting to process remote datbase backup...]"
+# Make a ssh directory and set permissions
+mkdir /root/.ssh
+# Add the ssh identity file to root to configure connection to github
+echo "[Adding identify files to root...]"
+/bin/cp payloads/ssh_identity_file /root/.ssh/
+mv /root/.ssh/ssh_identity_file /root/.ssh/config
+chmod 0400 /root/.ssh/config
+echo "[Adding remote backup server as known host to root...]"
+if [ -s payloads/id_rsa_github ]
+then
+  # For each repository listed in githubuser file
+  while read -r -a remote_backup_ip
+  do
+    # Add remote backup server to the known_hosts file
+    ssh-keyscan -H ${remote_backup_ip} >> /root/.ssh/known_hosts
+  done < payloads/remote_serverdata
+fi
+# Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+echo "[Moving remote server SSH keys to root...]"
+/bin/cp payloads/id_rsa_remote /root/.ssh
+/bin/cp payloads/id_rsa_remote.pub /root/.ssh
+# Modify permissions
+chmod 0400 /root/.ssh/id_rsa_remote
+chmod 0400 /root/.ssh/id_rsa_remote.pub
+# Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+echo "[Adding remote server SSH keys to root ssh agent...]"
+eval `ssh-agent -s`
+ssh-add /root/.ssh/id_rsa_remote
+# Move the SQL backup file to the remote servers
+if [ -s payloads/id_rsa_github ]
+then
+  # For each repository listed in githubuser file
+  while read -r -a remote_backup_ip
+  do
+    # Copy SQL backup to the known hosts file
+    scp backup@${}
+  done < payloads/remote_serverdata
+fi
+#
+# Clean up
+#
 # Clear the command line history
 echo "[Removing command line history...]"
 history -c
