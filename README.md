@@ -24,13 +24,13 @@ VPS Deploy WordPress is to quickly deploy a CentOS 7 VPS as a web-server for a W
 ### What VPS_deploy will do:
 
 1. Configure and encrypt the payload
-2. **VPS_deploy.py -remotedeploy -p \<password\>** will prepare the VPS server to run VPS_deploy, move the encrypted payload and script to the server and execute the **VPS_deploy.py -deploy -p /<password>/** script.
+2. **VPS_deploy.py -remotedeploy -p \<password\>** will prepare the VPS server to run VPS_deploy, move the encrypted payload and script to the server and then execute **VPS_deploy.py -deploy -p /<password>/** script on the VPS server.
 *TODO* does grub need to be configured for CentOS???
-3. New non-root users will be created and SSH for remote access will be removed
+3. Non-root user(s) will be created and SSH for remote access will be removed
 4. Firewall will be installed, configured and installed as a service
 5. **LAMP** stack will be installed, configured and installed as service
-6. SELinux will be configured to allow SMTP, and PHP write access
-7. **git** will be installed and connection made to GitHub to clone your website to the web-directory
+6. SELinux will be configured to allow SMTP, and PHP write access to the web root directory
+7. **git** will be installed your GitHub repository cloned to the web root directory
 8. The MySQL initialization script for the WordPress site will be modified for the live site URL.
 9. An SSL certificate will be generated from Let's Encrypt Certificate Authority
 10. Additional security packages **rkhunter** and **chkrootkit** will be installed and added to crontab for root
