@@ -207,15 +207,10 @@ def migrate_site_url(args_array):
         args_array['command_args']['infile'] = args_array['default_site_URI']
     # If there was a url included check if it has https and filter down to URI
     else:
-        # remove "https://", "http://", "www." from infile
-        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("https://")
-        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("http://")
-        args_array['command_args']['infile'] = args_array['command_args']['infile'].strip("www.")
-
-    # remove "https://", "http://", "www." from outfile
-    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("https://")
-    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("http://")
-    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("www.")
+        # Remove "https://", "http://", "www." from infile
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].replace("https://","")
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].replace("http://","")
+        args_array['command_args']['infile'] = args_array['command_args']['infile'].replace("www.","")
 
     # Create infile variables for the URI, HTTPS_URL and WWW_URL
     args_array['infile_https_url'] = "https://" + args_array['command_args']['infile']
@@ -224,9 +219,18 @@ def migrate_site_url(args_array):
     args_array['infile_uri'] = args_array['command_args']['infile']
     print "Infile set to: " +  args_array['infile_uri']
 
-    # Create infile variables for the URI, HTTPS_URL and WWW_URL
-    args_array['outfile_https_url'] = "https://" + args_array['command_args']['outfile']
-    args_array['outfile_http_url'] = "http://" + args_array['command_args']['outfile']
+    # Remove "https://", "http://", "www." from outfile
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].replace("https://","")
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].replace("http://","")
+    args_array['command_args']['outfile'] = args_array['command_args']['outfile'].replace("www.","")
+
+    # Create outfile variables for the URI, HTTPS_URL and WWW_URL
+    args_array['outfile_https_url'] = "https://www." + args_array['command_args']['outfile']
+    # If the argument is set to force https for all site urls
+    if args_array['force_ssl_during_migrate'] == True:
+        args_array['outfile_http_url'] = "https://www." + args_array['command_args']['outfile']
+    else:
+        args_array['outfile_http_url'] = "http://www." + args_array['command_args']['outfile']
     args_array['outfile_www_url'] = "www." + args_array['command_args']['outfile']
     args_array['outfile_uri'] = args_array['command_args']['outfile']
     print "Outfile set to: " + args_array['outfile_uri']
@@ -288,10 +292,10 @@ def migrate_single_file_url(args_array, filename):
             migrated_file_contents_array.append(line)
 
     # Rewrite the file arrray into the new file
-    with open(filename + ".migrated", "w") as outfile:
+    with open(filename + ".migrated.sql", "w") as outfile:
         for line in migrated_file_contents_array:
             # Do not change comment lines
-            if line.strip()[0] != "#":
+            if len(line.strip("\n")) != 0 and line.strip()[0] != "#":
                 # Replace the URL's
                 if args_array['infile_https_url'] in line:
                     print "[Found https to be replaced...]"
@@ -752,7 +756,7 @@ def build_command_arguments(args, args_array):
         # Pop off the first element of array because it's the application filename
         args.pop(0)
 
-        # First check if opendev, closedev arg issued
+        # First check if single command args are present
         if len(args) == 1:
             if "-opendev" in args:
                 # Return the command args array
@@ -764,8 +768,9 @@ def build_command_arguments(args, args_array):
                 return command_args
             else: return False
 
-        # If not opendev or closedev there needs to be 3 or 4 arguments
-        elif len(args) <=7:
+        # If not single command parse further
+        else:
+            # If the password flag is set then parse it
             if "-p" in args:
                 # Calculate position of -p argument
                 password_flag_position = args.index("-p")
@@ -781,10 +786,12 @@ def build_command_arguments(args, args_array):
                 command_args.update({"raw_password" : raw_password})
                 # Append the key back onto the end of the command line arguement array
                 command_args.update({"key" : key})
-            # If there is no password argument, then the command line is failed
+            # If there is no password argument
             elif "-p" not in args:
-                print "password please..."
-                return False
+                # If the command is not migrate
+                if "-migrate" not in args:
+                    print "password please..."
+                    return False
 
             # Look for infile in command args
             if "-if" in args:
@@ -827,7 +834,7 @@ def build_command_arguments(args, args_array):
                 # Validate the WordPress directory exists
                 if not os.path.isdir(command_args['wordpress_dirpath']):
                     print "The WordPress root directory you specified cannot be found..."
-                    exit()
+                    return False
                 # Validate that it contains WordPress files
                 else:
                     # Add a trailing "/" if not already
@@ -836,7 +843,7 @@ def build_command_arguments(args, args_array):
                     # Check for WordPress files in the directory
                     if not os.path.isfile(command_args['wordpress_dirpath'] + "wp-config.php"):
                         print "The WordPress root directory you specified does not seemt to contain WordPress..."
-                        exit()
+                        return False
 
             # For loop to modify elements and strip "-"
             for item in args:
@@ -872,10 +879,6 @@ def build_command_arguments(args, args_array):
 
             # Return the command args array
             return command_args
-
-        # There are an incorrect number of arguments
-        else:
-            return False
 
     except Exception as e:
         # Collect the exception information
@@ -1004,6 +1007,7 @@ if __name__ == '__main__':
             "extra_files/database/",
             "sitemap-news.xml"
         ],
+        "force_ssl_during_migrate" : True,
         # Array of files that need to be executable
         "executable_files_array" : [
             "payloads/VPS_deploy.sh",
@@ -1176,7 +1180,7 @@ if __name__ == '__main__':
 
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "backup":
-            # Open the payload again
+            # Open the payload
             if is_payload_open(args_array) == False:
                 print "[Opening payload...]"
                 # Open the payload
@@ -1193,10 +1197,7 @@ if __name__ == '__main__':
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "migrate":
 
-            print args_array['command_args']
-            exit()
-
-            # Open the payload again
+            # Open the payload
             if is_payload_open(args_array) == False:
                 print "[Opening payload...]"
                 # Open the payload
