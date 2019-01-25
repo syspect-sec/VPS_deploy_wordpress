@@ -202,8 +202,6 @@ def migrate_site_url(args_array):
     ## Include logger in the main function
     logger = logging.getLogger(args_array['app_name'])
 
-    #TODO: Can also use the URL from the serverdata file
-
     # Check if the infile is specified or use default
     if args_array['command_args']['infile'] == False:
         args_array['command_args']['infile'] = args_array['default_site_URI']
@@ -220,26 +218,30 @@ def migrate_site_url(args_array):
     args_array['command_args']['outfile'] = args_array['command_args']['outfile'].strip("www.")
 
     # Create infile variables for the URI, HTTPS_URL and WWW_URL
-    args_array['infile_https_url'] = "https:///" + args_array['command_args']['infile']
-    args_array['infile_http_url'] = "http:///" + args_array['command_args']['infile']
-    args_array['infile_www_url'] = "www" + args_array['command_args']['infile']
+    args_array['infile_https_url'] = "https://" + args_array['command_args']['infile']
+    args_array['infile_http_url'] = "http://" + args_array['command_args']['infile']
+    args_array['infile_www_url'] = "www." + args_array['command_args']['infile']
     args_array['infile_uri'] = args_array['command_args']['infile']
     print "Infile set to: " +  args_array['infile_uri']
 
     # Create infile variables for the URI, HTTPS_URL and WWW_URL
-    args_array['outfile_https_url'] = "https:///" + args_array['command_args']['outfile']
-    args_array['outfile_http_url'] = "http:///" + args_array['command_args']['outfile']
-    args_array['outfile_www_url'] = "www" + args_array['command_args']['outfile']
+    args_array['outfile_https_url'] = "https://" + args_array['command_args']['outfile']
+    args_array['outfile_http_url'] = "http://" + args_array['command_args']['outfile']
+    args_array['outfile_www_url'] = "www." + args_array['command_args']['outfile']
     args_array['outfile_uri'] = args_array['command_args']['outfile']
     print "Outfile set to: " + args_array['outfile_uri']
 
     # Print message to stdout
-    print "[Migrating site URL from " + args_array['infile_https_url'] +  " to " + args_array['outfile_https_url'] +  "...]"
+    print "[Migrating WordPress site URL from " + args_array['infile_https_url'] +  " to " + args_array['outfile_https_url'] +  "...]"
 
     # Keep track of replacements in the file
     replacement_count = 0
     # Loop through all files
     for item in args_array["migrate_files_array"]:
+
+        # Afix the full path to find the files to be migrated
+        item = args_array['command_args']['wordpress_dirpath'] + item
+
         # For any directories in the list
         if os.path.isdir(item):
             for filename in os.listdir(item):
@@ -314,8 +316,8 @@ def migrate_single_file_url(args_array, filename):
                 outfile.write(line + "\n")
 
     # Print to stdout
-    #print "[Finished migrating file : " + base_filename + "...]"
-    #print "[" + str(replacement_count) +  " replacements were found...]"
+    print "[Finished migrating file : " + base_filename + "...]"
+    print "[" + str(replacement_count) +  " replacements were found...]"
     # Return the replacement count to be tracked
     return replacement_count
 
@@ -810,6 +812,32 @@ def build_command_arguments(args, args_array):
                 # Append the outfile onto the command line argument array
                 command_args.update({"outfile" : outfile})
 
+            # Look for WordPress location in command args
+            if "-wp" in args:
+                # Calculate position of -of argument
+                wordpress_dirpath_flag_position = args.index("-wp")
+                # Pop the flag off the array
+                args.pop(wordpress_dirpath_flag_position)
+                # Look for the outfile in the next position
+                wordpress_dirpath = args[wordpress_dirpath_flag_position]
+                # Pop the outfile string out of the argument array
+                args.pop(wordpress_dirpath_flag_position)
+                # Append the outfile onto the command line argument array
+                command_args.update({"wordpress_dirpath" : wordpress_dirpath})
+                # Validate the WordPress directory exists
+                if not os.path.isdir(command_args['wordpress_dirpath']):
+                    print "The WordPress root directory you specified cannot be found..."
+                    exit()
+                # Validate that it contains WordPress files
+                else:
+                    # Add a trailing "/" if not already
+                    if command_args['wordpress_dirpath'][-1] != "/":
+                        command_args['wordpress_dirpath'] = command_args['wordpress_dirpath'] + "/"
+                    # Check for WordPress files in the directory
+                    if not os.path.isfile(command_args['wordpress_dirpath'] + "wp-config.php"):
+                        print "The WordPress root directory you specified does not seemt to contain WordPress..."
+                        exit()
+
             # For loop to modify elements and strip "-"
             for item in args:
                 if item in args_array['allowed_args_array']:
@@ -836,7 +864,10 @@ def build_command_arguments(args, args_array):
                 if "infile" not in command_args:
                     command_args.update({"infile" : False})
                 if "outfile" not in command_args:
-                    print "Outfile must be be specified using -of when migrating the site..."
+                    print "Destination URL must be be specified using the -of flag when migrating the site..."
+                    return False
+                if "wordpress_dirpath" not in command_args:
+                    print "WordPress location must be be specified using the -wp flag when migrating the site..."
                     return False
 
             # Return the command args array
@@ -903,7 +934,7 @@ if __name__ == '__main__':
         # VPS Deploy flags
         "app_name" : "VPS Deploy",
         "sandbox_mode" : True,
-        "log_filename" : cwd + "log",
+        "log_filename" : cwd + "/log",
         "cwd" : cwd + "/",
         # Default site URL in the vanilla version of the package
         "default_site_URI" : "<yoursite.com>",
@@ -967,10 +998,11 @@ if __name__ == '__main__':
                 cwd + "/payloads/ssh_identity_file"
             ]
         },
-        # Files to check during a migrate
+        # Files to check during a WordPress URL migration
+        # These are relative to the WordPress
         "migrate_files_array" : [
-            cwd + "/payloads/",
-            cwd + "/serverdata"
+            "extra_files/database/",
+            "sitemap-news.xml"
         ],
         # Array of files that need to be executable
         "executable_files_array" : [
@@ -1160,6 +1192,10 @@ if __name__ == '__main__':
 
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "migrate":
+
+            print args_array['command_args']
+            exit()
+
             # Open the payload again
             if is_payload_open(args_array) == False:
                 print "[Opening payload...]"
@@ -1168,4 +1204,3 @@ if __name__ == '__main__':
 
             # Call the function to migrate the site urls
             migrate_site_url(args_array)
-            migrate_site_github_repo(args_array)
