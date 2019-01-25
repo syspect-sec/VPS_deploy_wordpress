@@ -258,6 +258,7 @@ def migrate_site_url(args_array):
             # Call function to adjust file for migration
             replacement_count += migrate_single_file_url(args_array, item)
 
+    print "[Finished migration...]"
     # Print the total number of replacements found
     print "[ " + str(replacement_count) + " replacements were made...]"
 
@@ -285,32 +286,31 @@ def migrate_single_file_url(args_array, filename):
     for line in infile_contents:
         # If the line is empty
         if len(line.strip()) == 0:
-            print "\n"
             migrated_file_contents_array.append("\n")
         else:
             line = line.strip("\n")
             migrated_file_contents_array.append(line)
 
     # Rewrite the file arrray into the new file
-    with open(filename + ".migrated.sql", "w") as outfile:
+    with open(filename, "w") as outfile:
         for line in migrated_file_contents_array:
             # Do not change comment lines
             if len(line.strip("\n")) != 0 and line.strip()[0] != "#":
                 # Replace the URL's
                 if args_array['infile_https_url'] in line:
-                    print "[Found https to be replaced...]"
+                    #print "[Found https to be replaced...]"
                     line = line.replace(args_array['infile_https_url'],args_array['outfile_https_url'])
                     replacement_count += 1
                 if args_array['infile_http_url'] in line:
-                    print "[Found http to be replaced...]"
+                    #print "[Found http to be replaced...]"
                     line = line.replace(args_array['infile_http_url'],args_array['outfile_http_url'])
                     replacement_count += 1
                 if args_array['infile_www_url'] in line:
-                    print "[Found www to be replaced...]"
+                    #print "[Found www to be replaced...]"
                     line = line.replace(args_array['infile_www_url'],args_array['outfile_www_url'])
                     replacement_count += 1
                 if args_array['infile_uri'] in line:
-                    print "[Found uri to be replaced...]"
+                    #print "[Found uri to be replaced...]"
                     line = line.replace(args_array['infile_uri'],args_array['outfile_uri'])
                     replacement_count += 1
             # Check if the line is a blank line
@@ -320,8 +320,8 @@ def migrate_single_file_url(args_array, filename):
                 outfile.write(line + "\n")
 
     # Print to stdout
-    print "[Finished migrating file : " + base_filename + "...]"
-    print "[" + str(replacement_count) +  " replacements were found...]"
+    #print "[Finished migrating file : " + base_filename + "...]"
+    #print "[" + str(replacement_count) +  " replacements were found...]"
     # Return the replacement count to be tracked
     return replacement_count
 
