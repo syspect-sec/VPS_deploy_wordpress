@@ -65,8 +65,17 @@ def get_server_data_from_file(cwd):
             if line.split()[0] == "RemoteBackupIP":
                 server_data.update({'remote_backup_IP' : line.split()[1]})
                 print "Remote server IP " + server_data['remote_backup_IP']
+            if line.split()[0] == "RootPassword":
+                server_data.update({'root_password' : line.split()[1]})
+                print "Root password " + server_data['root_password']
+            if line.split()[0] == "NonRootUsername":
+                server_data.update({'non_root_username' : line.split()[1]})
+                print "Non root username " + server_data['non_root_username']
+            if line.split()[0] == "NonRootPassword":
+                server_data.update({'non_root_password' : line.split()[1]})
+                print "Non root password " + server_data['non_root_password']
     # Check to see the serverdata has been modified
-    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data:
+    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data or "root_password" not in server_data or "non_root_username" not in server_data or "non_root_password" not in server_data:
         print "[You did add your server config to the serverdata file...]"
         exit()
 
@@ -562,6 +571,12 @@ def initialize_payload(args_array):
         init_as.write(args_array['github_reponame'] + "\n")
         print "[Finished storing new configuration settings...]"
 
+    # Write the new userdata into payload
+    with open(args_array['user_filename'], "w") as init_as:
+        print "[Storing new userdata settings...]"
+        init_as.write("root " + args_array['root_password'] + "\n")
+        init_as.write(args_array['non_root_username'] + args_array['root_username'] + "\n")
+
     # If the remote server has been specified in the serverdata file
     # replace it into the remote_serverdata file
     if "remote_backup_IP" in args_array:
@@ -951,6 +966,12 @@ if __name__ == '__main__':
         "default_github_username" : "<github_username>",
         # Default github repo username in the vanilla version of the package
         "default_github_reponame" : "<github_reponame>",
+        # Default non-root username in the vanilla version of the package
+        "default_non_root_username" : "<non_root_username>",
+        # Default non-root username in the vanilla version of the package
+        "default_non_root_password" : "<non_root_password>",
+        # Default github repo username in the vanilla version of the package
+        "default_root_password" : "<root_password>",
         # Allowed command line args
 		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
         # Command args that are not allowed with purge
@@ -961,6 +982,8 @@ if __name__ == '__main__':
         "payload_ready_filename" : ".passcheck",
         # File to check if payload is still default or has been init
         "payload_init_filename" : payload_dirpath + ".init_as",
+        # Payload file containing userdata for VPS
+        "payload_userdata" : payload_dirpath + "userdata",
         # File containing the remote backup IP address
         "payload_remote_serverdata_filename" : payload_dirpath + "remote_serverdata",
         # Filepath to zipped compressed payload
@@ -984,7 +1007,8 @@ if __name__ == '__main__':
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/remote_serverdata",
-
+                cwd + "/payloads/VPS_deploy.sh",
+                cwd + "/payloads/VPS_remote_backup.sh"
             ],
             # Files that have GitHub data to be replaced
             "github_data" : [

@@ -496,7 +496,7 @@ do
   # Eliminate all comment lines
   if [[ ${sshdata[0]:0:1} != "#" && ! -z "${sshdata[0]}" ]]; then
     if [ ${sshdata[0]} = "DomainName" ]; then
-      certbot --non-interactive --agree-tos --redirect --hsts --uir -m joseph@ripplesoftware.ca --apache -d ${sshdata[1]} -d www.${sshdata[1]}
+      certbot --non-interactive --agree-tos --redirect --hsts --uir -m <your@emailaddress.com> --apache -d ${sshdata[1]} -d www.${sshdata[1]}
     fi
   fi
 done < serverdata
