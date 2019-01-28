@@ -1,2 +1,2 @@
-root change_this_password
-backup change_this_password
+root <default_mysql_root_password>
+backup <default_mysql_backup_password>

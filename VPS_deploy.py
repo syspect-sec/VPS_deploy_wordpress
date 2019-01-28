@@ -64,19 +64,25 @@ def get_server_data_from_file(cwd):
                 print "Admin email: " + server_data['admin_email']
             if line.split()[0] == "RemoteBackupIP":
                 server_data.update({'remote_backup_IP' : line.split()[1]})
-                print "Remote server IP " + server_data['remote_backup_IP']
+                print "Remote server IP: " + server_data['remote_backup_IP']
             if line.split()[0] == "RootPassword":
                 server_data.update({'root_password' : line.split()[1]})
-                print "Root password " + server_data['root_password']
+                print "Root password: " + server_data['root_password']
             if line.split()[0] == "NonRootUsername":
                 server_data.update({'non_root_username' : line.split()[1]})
-                print "Non root username " + server_data['non_root_username']
+                print "Non root username: " + server_data['non_root_username']
             if line.split()[0] == "NonRootPassword":
                 server_data.update({'non_root_password' : line.split()[1]})
-                print "Non root password " + server_data['non_root_password']
+                print "Non root password: " + server_data['non_root_password']
+            if line.split()[0] == "MySQLRootPassword":
+                server_data.update({'mysql_root_password' : line.split()[1]})
+                print "MySQL root password: " + server_data['mysql_root_password']
+            if line.split()[0] == "MySQLBackupPassword":
+                server_data.update({'mysql_backup_password' : line.split()[1]})
+                print "MySQL backup password: " + server_data['mysql_backup_password']
     # Check to see the serverdata has been modified
     if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data or "root_password" not in server_data or "non_root_username" not in server_data or "non_root_password" not in server_data:
-        print "[You did add your server config to the serverdata file...]"
+        print "[You didn't add your server config to the serverdata file...]"
         exit()
 
     # Set a false flag if there is no remote server IP
@@ -548,6 +554,7 @@ def initialize_payload(args_array):
         # Set the current GitHub username and repo name to be replaced from the file
         args_array['current_github_username'] = args_array['default_github_username']
         args_array['current_github_reponame'] = args_array['default_github_reponame']
+
     # Check if payload is still default or has been changed
     else:
         print "[Existing configuration detected...]"
@@ -572,10 +579,16 @@ def initialize_payload(args_array):
         print "[Finished storing new configuration settings...]"
 
     # Write the new userdata into payload
-    with open(args_array['user_filename'], "w") as init_as:
+    with open(args_array['payload_userdata'], "w") as init_as:
         print "[Storing new userdata settings...]"
         init_as.write("root " + args_array['root_password'] + "\n")
-        init_as.write(args_array['non_root_username'] + args_array['root_username'] + "\n")
+        init_as.write(args_array['non_root_username'] + " " +  args_array['non_root_password'])
+
+    # Write the new MySQL userdata into payload
+    with open(args_array['payload_mysql_userdata'], "w") as init_as:
+        print "[Storing new mysql userdata settings...]"
+        init_as.write("root " + args_array['mysql_root_password'] + "\n")
+        init_as.write("backup " +  args_array['mysql_backup_password'])
 
     # If the remote server has been specified in the serverdata file
     # replace it into the remote_serverdata file
@@ -732,6 +745,16 @@ def prepare_args_array(args_array):
     args_array.update({"admin_email" : server_data['admin_email']})
     # Remote backup server IP
     args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
+    # Root password
+    args_array.update({"root_password" : server_data['root_password']})
+    # Non-root username
+    args_array.update({"non_root_username" : server_data['non_root_username']})
+    # Non-root password
+    args_array.update({"non_root_password" : server_data['non_root_password']})
+    # MySQL root password
+    args_array.update({"mysql_root_password" : server_data['mysql_root_password']})
+    # MySQL backup password
+    args_array.update({"mysql_backup_password" : server_data['mysql_backup_password']})
     # Update the name of the sites_enabled file for Apache based on site_URI
     args_array["payload_filename_array"]["v_host_site_file"]["destination_path"] = "/etc/sites_enabled/" + server_data['site_URI'] + ".conf"
 
@@ -972,6 +995,10 @@ if __name__ == '__main__':
         "default_non_root_password" : "<default_non_root_password>",
         # Default github repo username in the vanilla version of the package
         "default_root_password" : "<default_root_password>",
+        # Default MySQL root password in the vanilla version of the package
+        "default_mysql_root_password" : "<default_mysql_root_password>",
+        # Default MySQL backup password in the vanilla version of the package
+        "default_mysql_backup_password" : "<default_mysql_backup_password>",
         # Allowed command line args
 		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
         # Command args that are not allowed with purge
@@ -986,6 +1013,8 @@ if __name__ == '__main__':
         "payload_userdata" : payload_dirpath + "userdata",
         # File containing the remote backup IP address
         "payload_remote_serverdata_filename" : payload_dirpath + "remote_serverdata",
+        # File containing the MySQL userdata
+        "payload_mysql_userdata" : payload_dirpath + "mysql_userdata",
         # Filepath to zipped compressed payload
         "compressed_payload_filename" : "payload",
         # Filename of the main VPS_deploy script
@@ -1024,6 +1053,10 @@ if __name__ == '__main__':
             "remote_serverdata" : [
                 cwd + "/payloads/remote_serverdata",
                 cwd + "/payloads/ssh_identity_file"
+            ],
+            # Files that have MySQL data to be replaced
+            "mysql_data" : [
+                cwd + "/payloads/mysql_userdata"
             ]
         },
         # Files to check during a WordPress URL migration
