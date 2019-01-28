@@ -967,11 +967,11 @@ if __name__ == '__main__':
         # Default github repo username in the vanilla version of the package
         "default_github_reponame" : "<github_reponame>",
         # Default non-root username in the vanilla version of the package
-        "default_non_root_username" : "<non_root_username>",
+        "default_non_root_username" : "<default_non_root_username>",
         # Default non-root username in the vanilla version of the package
-        "default_non_root_password" : "<non_root_password>",
+        "default_non_root_password" : "<default_non_root_password>",
         # Default github repo username in the vanilla version of the package
-        "default_root_password" : "<root_password>",
+        "default_root_password" : "<default_root_password>",
         # Allowed command line args
 		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
         # Command args that are not allowed with purge
@@ -1008,7 +1008,8 @@ if __name__ == '__main__':
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/remote_serverdata",
                 cwd + "/payloads/VPS_deploy.sh",
-                cwd + "/payloads/VPS_remote_backup.sh"
+                cwd + "/payloads/VPS_remote_backup.sh",
+                cwd + "/payloads/userdata"
             ],
             # Files that have GitHub data to be replaced
             "github_data" : [

@@ -9,6 +9,6 @@
 #RemoteBackupIP 123.456.78.9
 #GitHubUser github_username
 #GitHubRepo github_reponame
-#RootPassword 
-#NonRootUsername
-#NonRootPassword
+#RootPassword add_a_password
+#NonRootUsername non_root_username
+#NonRootPassword add_a_password
