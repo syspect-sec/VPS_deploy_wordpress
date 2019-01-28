@@ -12,3 +12,5 @@
 #RootPassword add_a_password
 #NonRootUsername non_root_username
 #NonRootPassword add_a_password
+#MySQLRootPassword change_this_password
+#MySQLBackupPassword change_this_password
