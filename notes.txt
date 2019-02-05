@@ -20,6 +20,7 @@ warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.22-1.w7.x86_64
 # Things to check on server after a deployment
 #
 -can ssh back into -- check
+-check that swap is active
 -SSL/TLS certificate working -- check
 -cron tabs installed -- check
 -all mysql scripts run successfully (content database working from MySQL cli but not script in VPS_deploy)

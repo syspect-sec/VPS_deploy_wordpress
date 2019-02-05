@@ -35,6 +35,15 @@ mkdir /var/log/journal
 systemd-tmpfiles --create --prefix /var/log/journal
 systemctl restart systemd-journald
 #
+# Creat Swap space and enable
+#
+fallocate -l 1G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
+swapon --show
+free -h
 # Install Firewalld
 #
 echo "[Installing firewalld...]"
