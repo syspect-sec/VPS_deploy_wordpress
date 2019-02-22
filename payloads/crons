@@ -3,3 +3,5 @@
 # That you want cronned you can add here like sample below:
 # 0 0 * * 0 python /var/www/html/reponame/scripts/scriptname.py
 # Install VP mailer crons
+# Restart MySQL if it's down
+* * * * *    root      service mariadb status || service mariadb start
