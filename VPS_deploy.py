@@ -1048,6 +1048,7 @@ if __name__ == '__main__':
                 cwd + "/payloads/site_permissions",
                 cwd + "/payloads/site_permissions_open",
                 cwd + "/payloads/V_host.conf",
+                cwd + "/payloads/VPS_deploy.sh"
             ],
             # Files that have remote backup server data to be replaced
             "remote_serverdata" : [

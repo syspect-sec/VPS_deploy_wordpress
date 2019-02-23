@@ -2,9 +2,3 @@
 # If you have any scripts included in the GitHub repository
 # That you want cronned you can add here like sample below:
 # 0 0 * * 0 python /var/www/html/reponame/scripts/scriptname.py
-# Install VP mailer crons
-<<<<<<< HEAD
-# Restart MySQL if it's down
-=======
->>>>>>> 973874e42f22f46d45673bc1f872c76cf4888615
-* * * * *    root      service mariadb status || service mariadb start

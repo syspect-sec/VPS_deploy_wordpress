@@ -1,10 +1,10 @@
-# This file should include the IP address of the server and the
+# This file should include at least the IP address of the server and the
 # domain name that the server will host.  This is used for the
 # -remotedeploy option as well as for SSL certificate registration.
-# The domain name should ONLY be the base domain (without wwww.)
+# The domain name should ONLY be the base domain (without wwww.).
 # Sample:
-# IP 123.456.78.9
-# DomainName yoursite.com
+#IP 123.456.78.9
+#DomainName yoursite.com
 #EmailAddress your@emailaddress.com
 #RemoteBackupIP 123.456.78.9
 #GitHubUser github_username

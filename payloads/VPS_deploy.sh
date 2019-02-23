@@ -464,12 +464,15 @@ if [ -s payloads/mysql_userdata ]; then
   while read -r -a mysqlpass
   do
     if [ ${mysqlpass[0]} = "backup" ]; then
-      mkdir /var/www/backups
-      chmod o+w /var/www/backups
-      crontab -l | { cat; echo "0 0 * * 1 mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/backups/db_backup_\$(date +\%m_\%d_\%Y).sql.gz"; } | crontab -
+      mkdir -p /var/www/html/<github_reponame>/extra_files/database/backups
+      chmod o+w /var/www/html/<github_reponame>/extra_files/database/backups
+      crontab -l | { cat; echo "0 0 * * 1 mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/html/<github_reponame>/backups/db_backup_\$(date +\%m_\%d_\%Y).sql.gz"; } | crontab -
     fi
   done < payloads/mysql_userdata
 fi
+# Install a cron to check that MySQL is running at all times
+echo "[Adding MySQL status checking and restart to crontabs...]"
+crontab -l | { cat; echo "* * * * * root service mariadb status || service mariadb start"; } | crontab -
 # Install GitHub push and scp database backup to remote server
 echo "[Adding GitHub and remote database backup to crontabs...]"
 crontab -l | { cat; echo "0 5 * * 1 python ./root/VPS_deploy.py -backup -p $1"; } | crontab -
