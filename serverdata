@@ -1,7 +1,11 @@
-# This file should include at least the IP address of the server and the
+# This file should include the IP address of the server and the
 # domain name that the server will host.  This is used for the
 # -remotedeploy option as well as for SSL certificate registration.
-# The domain name should ONLY be the base domain (without wwww.).
+# The domain name should ONLY be the base domain (without wwww.)
+# It's recommended that the RootPassWord NonRootPassWord not be
+# uncommented.  If left commented out or if the values are unchanged
+# from the default value, pseudo-random values will be generated
+# and populated when you first load the payload.
 # Sample:
 #IP 123.456.78.9
 #DomainName yoursite.com
@@ -9,8 +13,14 @@
 #RemoteBackupIP 123.456.78.9
 #GitHubUser github_username
 #GitHubRepo github_reponame
-#RootPassword add_a_password
 #NonRootUsername non_root_username
+#RootPassword add_a_password
 #NonRootPassword add_a_password
 #MySQLRootPassword change_this_password
 #MySQLBackupPassword change_this_password
+#The PHP version to be installed (5.5, 5.6, 7.1, 7.2)
+#PHPVersion 5.6
+#The datbase application to install (mariadb, mysql, postgres)
+#DBApplication mariadb
+#Add as many additional applications as you want
+#AdditionalApplications nano
