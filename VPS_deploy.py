@@ -80,6 +80,16 @@ def get_server_data_from_file(cwd):
             if line.split()[0] == "MySQLBackupPassword":
                 server_data.update({'mysql_backup_password' : line.split()[1]})
                 print "MySQL backup password: " + server_data['mysql_backup_password']
+            if line.split()[0] == "PHPVersion":
+                server_data.update({'PHP_version' : line.split()[1].strip()})
+                print "PHP version " + server_data['PHP_version']
+            if line.split()[0] == "DBApplication":
+                server_data.update({'DB_app' : line.split()[1].strip()})
+                print "Database Application " + server_data['DB_app']
+            if line.split()[0] == "AdditionalApplication":
+                server_data['additional_app_array'] = []
+                server_data.append('additional_app_array', line.split()[1].strip())
+                print "Additional Application " + server_data['DB_app']
     # Check to see the serverdata has been modified
     if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data or "root_password" not in server_data or "non_root_username" not in server_data or "non_root_password" not in server_data:
         print "[You didn't add your server config to the serverdata file...]"
@@ -120,6 +130,20 @@ def get_github_data_from_file(payload_dirpath):
     # Return the dictionary with serverdata
     return github_data
 
+# Collect any critical information required from the payload files
+def collect_payload_critical_information(args_array):
+
+    ## Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    # Open the userdata file and read into array
+    userdata_file = open("payloads/userdata", "r")
+    userdata_contents_array = userdata_file.readlines()
+    for line in userdata_contents_array:
+        line = line.split().strip()
+        if line[0] != "root":
+            return line[0]
+
 # Loads the payload and returns args_array
 def load_payload(args_array):
 
@@ -140,12 +164,16 @@ def store_critical_information(args_array):
     ## Include logger in the main function
     logger = logging.getLogger(args_array['app_name'])
 
+    # Get the non-root username to add to the critical information file
+    non_root_username = collect_payload_critical_information(args_array)
+
     # Create a string to hold all the critical data
     critical_information_string = ""
 
     # Append to critical information string
     critical_information_string += "\n\nIMPORTANT: The payload will be erased after is is deployed so save the following information in a safe place."
     critical_information_string += "\n\nVPS_deploy payload password: " + args_array['command_args']['raw_password']
+    critical_information_string += "\nSSH command: ssh " + non_root_username + '@' + args_array['site_IP']
     critical_information_string += "\n\nOption A:"
     critical_information_string += "\n1. Copy (scp) payload.zip and VP_deplpy.py to your server"
     critical_information_string += "\n2. SSH into your VPS"
@@ -171,7 +199,7 @@ def store_critical_information(args_array):
             else:
                 # Print the header
                 critical_information_string += "\n" + critical_item['header'] + ": \n"
-                #
+                # Add non comments to the critical file output
                 for line in file_array:
                     if line.strip()[:0] != "#":
                         critical_information_string += line

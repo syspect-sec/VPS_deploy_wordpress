@@ -60,6 +60,7 @@ echo "[VPS_deploy has updated your GitHub repository...]"
 # Clear the command line history
 echo "[Removing command line history...]"
 history -c
+rm -rf /root/.bash_history
 echo "[Command line history removed...]"
 echo "[Removing SSH directory...]"
 rm -rf /root/.ssh

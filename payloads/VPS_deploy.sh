@@ -565,7 +565,7 @@ fi
 # Clear the command line history
 echo "[Removing command line history...]"
 history -c
-> .bash_history
+rm -rf /root/.bash_history
 echo "[Command line history removed...]"
 # Power-off for image of server or reboot system
 while read -r -a finish
