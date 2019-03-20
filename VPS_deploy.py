@@ -53,30 +53,43 @@ def get_server_data_from_file(cwd):
         serverdata_array = serverdata_file.readlines()
     for line in serverdata_array:
         if line.strip()[0] is not "#":
+            # Collect the IP from config file
             if line.split()[0] == "IP":
                 server_data.update({'IP' : line.split()[1].strip()})
                 print "Server IP: " + server_data['IP']
+            # Collect the domain name from config file
             if line.split()[0] == "DomainName":
                 server_data.update({'site_URI' : line.split()[1].strip()})
                 print "Domain name: " + server_data['site_URI']
+            # Collect the email address from config file
             if line.split()[0] == "EmailAddress":
                 server_data.update({'admin_email' : line.split()[1].strip()})
                 print "Admin email: " + server_data['admin_email']
+            # Collect the root password from config file
             if line.split()[0] == "RootPassWord":
                 server_data.update({'root_password' : line.split()[1].strip()})
                 print "Root password: " + server_data['root_password']
+            # Collect the non root password from config file
             if line.split()[0] == "NonRootPassword":
                 server_data.update({'non_root_password' : line.split()[1].strip()})
                 print "Non-root password: " + server_data['non_root_password']
+            # Collect the non root username from config file
+            if line.split()[0] == "NonRootUsername":
+                server_data.update({'non_root_username' : line.split()[1].strip()})
+                print "Non-root username: " + server_data['non_root_username']
+            # Collect the non remote backup IP from config file
             if line.split()[0] == "RemoteBackupIP":
                 server_data.update({'remote_backup_IP' : line.split()[1].strip()})
                 print "Remote server IP " + server_data['remote_backup_IP']
+            # Collect the PHP Version from config file
             if line.split()[0] == "PHPVersion":
                 server_data.update({'PHP_version' : line.split()[1].strip()})
                 print "PHP version " + server_data['PHP_version']
+            # Collect the DB Application from config file
             if line.split()[0] == "DBApplication":
                 server_data.update({'DB_app' : line.split()[1].strip()})
                 print "Database Application " + server_data['DB_app']
+            # Collect the Additional applications from config file
             if line.split()[0] == "AdditionalApplication":
                 server_data['additional_app_array'] = []
                 server_data.append('additional_app_array', line.split()[1].strip())
@@ -573,6 +586,7 @@ def initialize_payload(args_array):
         # Set the current userdata to be replaced as the default
         args_array['current_root_password'] = args_array['default_root_password']
         args_array['current_non_root_password'] = args_array['default_non_root_password']
+        args_array['current_non_root_username'] = args_array['default_non_root_username']
         # Set the GitHub username and repo name to be replaced as the default
         args_array['current_github_username'] = args_array['default_github_username']
         args_array['current_github_reponame'] = args_array['default_github_reponame']
@@ -587,9 +601,10 @@ def initialize_payload(args_array):
         # Set the current userdata to be replaced as the default
         args_array['current_root_password'] = init_as_contents[3].strip()
         args_array['current_non_root_password'] = init_as_contents[4].strip()
+        args_array['current_non_root_username'] = init_as_contents[5].strip()
         # Set the current GitHub username and repo name to be replaced from the file
-        args_array['current_github_username'] = init_as_contents[5].strip()
-        args_array['current_github_reponame'] = init_as_contents[6].strip()
+        args_array['current_github_username'] = init_as_contents[6].strip()
+        args_array['current_github_reponame'] = init_as_contents[7].strip()
 
 
     # Write the new serverdata configuration of payload into .init_as
@@ -600,6 +615,7 @@ def initialize_payload(args_array):
         init_as.write(args_array['admin_email'] + "\n")
         init_as.write(args_array['root_password'] + "\n")
         init_as.write(args_array['non_root_password'] + "\n")
+        init_as.write(args_array['non_root_username'] + "\n")
         init_as.write(args_array['github_username'] + "\n")
         init_as.write(args_array['github_reponame'] + "\n")
         print "[Finished storing new configuration settings...]"
