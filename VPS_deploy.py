@@ -80,7 +80,11 @@ def get_server_data_from_file(cwd):
             if line.split()[0] == "NonRootUsername":
                 server_data.update({'non_root_username' : line.split()[1].strip()})
                 print "Non-root username: " + server_data['non_root_username']
-            # Collect the non remote backup IP from config file
+            # Collect the remote backup username from config file
+            if line.split()[0] == "RemoteBackupUsername":
+                server_data.update({'remote_backup_username' : line.split()[1].strip()})
+                print ("Remote backup server username: " + server_data['remote_backup_username'])
+            # Collect the remote backup IP from config file
             if line.split()[0] == "RemoteBackupIP":
                 server_data.update({'remote_backup_IP' : line.split()[1].strip()})
                 print "Remote server IP: " + server_data['remote_backup_IP']
@@ -112,6 +116,7 @@ def get_server_data_from_file(cwd):
 
     # Set a false flag if there is no remote server IP
     if "remote_backup_IP" not in server_data:
+        server_data.update({'remote_backup_username' : False})
         server_data.update({'remote_backup_IP' : False})
 
     # Print message to stdout
@@ -171,10 +176,12 @@ def prepare_args_array(args_array):
     args_array.update({"mysql_root_password" : server_data['mysql_root_password']})
     # MySQL backup password to be set on the server
     args_array.update({"mysql_backup_password" : server_data['mysql_backup_password']})
-    # Remote backup server IP
-    args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
 
     # Update the optional serverdata settings
+    # Remote backup server username
+    if "RemoteBackupUsername" in server_data: args_array.update({"remote_backup_username" : server_data['remote_backup_username']})
+    # Remote backup server IP
+    if "RemoteBackupIP" in server_data: args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
     # Update the version of PHP to be installed
     if "PHP_version" in server_data: args_array.update({"PHP_version" : server_data['PHP_version']})
     # Update the version of PHP to be installed
@@ -623,6 +630,9 @@ def initialize_payload(args_array):
         args_array['current_root_password'] = args_array['default_root_password']
         args_array['current_non_root_password'] = args_array['default_non_root_password']
         args_array['current_non_root_username'] = args_array['default_non_root_username']
+        # Set the current remote backup username and IP to be replaced as default
+        args_array['current_remote_backup_username'] = args_array['default_remote_backup_username']
+        args_array['current_remote_backup_IP'] = args_array['default_remote_backup_IP']
         # Set the current userdata to be replaced as the default
         args_array['current_mysql_root_password'] = args_array['default_mysql_root_password']
         args_array['current_mysql_backup_password'] = args_array['default_mysql_backup_password']
@@ -630,7 +640,7 @@ def initialize_payload(args_array):
         args_array['current_github_username'] = args_array['default_github_username']
         args_array['current_github_reponame'] = args_array['default_github_reponame']
 
-    # Check if payload is still default or has been changed
+    # If the site as been initialized already prepare to make changes
     else:
         print "[Existing configuration detected...]"
         for item in init_as_contents:
@@ -642,9 +652,11 @@ def initialize_payload(args_array):
             # Set the admin email address
             if item.split()[0] == "EmailAddress":
                 args_array['current_admin_email'] = item.split()[1].strip()
-            # Set the remote backup IP
+            # Set the remote backup username and IP
+            if item.split()[0] == "RemoteBackupUsername":
+                args_array['current_remote_backup_username'] = item.split()[1].strip()
             if item.split()[0] == "RemoteBackupIP":
-                args_array['remote_backup_IP'] = item.split()[1].strip()
+                args_array['current_remote_backup_IP'] = item.split()[1].strip()
             # Set the current userdata to be replaced as the default
             if item.split()[0] == "NonRootUsername":
                 args_array['current_non_root_username'] = item.split()[1].strip()
@@ -663,21 +675,6 @@ def initialize_payload(args_array):
             if item.split()[0] == "GitHubRepo":
                 args_array['current_github_reponame'] = item.split()[1].strip()
 
-    # If no remote backup IP has been included in the serverdata file
-    # then check the remote_serverdata file and if it is not still set as
-    # the default value then set to current value
-    if args_array['remote_backup_IP'] == False:
-        # Open the remote_serverdata file and overwrite with default
-        with open(args_array['payload_remote_serverdata_filename'], "w") as remote_serverdata:
-            remote_serverdata.write(args_array['default_remote_backup_IP'])
-    # If the remote server has been specified in the serverdata file
-    # replace it into the remote_serverdata file
-    else:
-        # Open the remote_serverdata file and read the current value
-        with open(args_array['payload_remote_serverdata_filename'], "r") as remote_serverdata:
-            remote_serverdata_contents = remote_serverdata.readlines()
-            args_array['current_remote_backup_IP'] = remote_serverdata_contents[0]
-
     # Log and Stdout the server data changes to be made
     if args_array['current_site_IP'] != args_array['site_IP']:
         print "- Initializing the payload IP from " + args_array['current_site_IP'] + " to " + args_array['site_IP']
@@ -688,6 +685,10 @@ def initialize_payload(args_array):
     if args_array['current_admin_email'] != args_array['admin_email']:
         print "- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email']
         logger.info("- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email'])
+    # Log and stdout the remote backup server data changes to be made
+    if args_array['current_remote_backup_username'] != args_array['remote_backup_username']:
+        print "- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username']
+        logger.info("- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username'])
     if args_array['current_remote_backup_IP'] != args_array['remote_backup_IP']:
         print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP']
         logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
@@ -743,7 +744,10 @@ def store_new_configuration_settings(args_array):
         init_as.write("IP " + args_array['site_IP'] + "\n")
         init_as.write("DomainName " + args_array['site_URI'] + "\n")
         init_as.write("EmailAddress " + args_array['admin_email'] + "\n")
-        init_as.write("RemoteBackupIP " + args_array['remote_backup_IP'] + "\n")
+        if args_array['remote_backup_username'] != False:
+            init_as.write("RemoteBackupUsername " + args_array['remote_backup_username'] + "\n")
+        if args_array['remote_backup_IP'] != False:
+            init_as.write("RemoteBackupIP " + args_array['remote_backup_IP'] + "\n")
         init_as.write("NonRootUsername " + args_array['non_root_username'] + "\n")
         init_as.write("RootPassword " + args_array['root_password'] + "\n")
         init_as.write("NonRootPassword " + args_array['non_root_password'] + "\n")
@@ -752,9 +756,6 @@ def store_new_configuration_settings(args_array):
         init_as.write("GitHubUser " + args_array['github_username'] + "\n")
         init_as.write("GitHubRepo " + args_array['github_reponame'] + "\n")
         print "[Finished storing new configuration settings...]"
-    # Write the new serverdata configuration of payload into .init_as
-    with open(args_array['payload_remote_serverdata_filename'], "w") as remote_serverdata:
-        remote_serverdata.write(args_array['remote_backup_IP'])
 
 # Recieves a filename and looks for infile and changes to outfile
 def initialize_single_file(key, args_array, filename):
@@ -824,11 +825,21 @@ def initialize_single_file(key, args_array, filename):
                         line = line.replace(args_array['current_github_reponame'], args_array['github_reponame'])
                         replacement_count += 1
                 if key == "remote_serverdata":
+                    print ("Replacing remote serverdata in: " + filename + "\n")
+                    print ("Line: " + line + "\n")
+                    print ("Looking for IP: " + args_array['current_remote_backup_username'] + "\n")
+                    print ("Looking for username: " + args_array['current_remote_backup_IP'] + "\n")
+                    # Replace any modified instances of the current/default remote backup username
+                    if args_array['current_remote_backup_username'] in line:
+                        print ("[Found remote server username to be replaced...]")
+                        line = line.replace(args_array['current_remote_backup_username'], args_array['remote_backup_username'])
+                        replacement_count += 1
                     # Replace any modified instances of the current/default remote backup IP
                     if args_array['current_remote_backup_IP'] in line:
-                        print "[Found remote server IP to be replaced...]"
+                        print ("[Found remote server IP to be replaced...]")
                         line = line.replace(args_array['current_remote_backup_IP'], args_array['remote_backup_IP'])
                         replacement_count += 1
+
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:
                 outfile.write("\n")
@@ -1019,6 +1030,8 @@ if __name__ == '__main__':
         "default_site_URI" : "<yoursite.com>",
         # Default IP address in the vanilla version of the package
         "default_site_IP" : "<123.456.78.9>",
+        # Default remote backup server username in the vanilla version of the package
+        "default_remote_backup_username" : "<default_remote_backup_username>",
         # Default remote backup server IP address in the vanilla version of the package
         "default_remote_backup_IP" : "<default_remote_backup_IP>",
         # Default admin emaill address in the vanilla version of the package
@@ -1070,7 +1083,6 @@ if __name__ == '__main__':
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/VPS_deploy.sh",
-                cwd + "/payloads/VPS_remote_backup.sh",
                 cwd + "/payloads/userdata"
             ],
             # Files that have GitHub data to be replaced
@@ -1086,7 +1098,8 @@ if __name__ == '__main__':
             # Files that have remote backup server data to be replaced
             "remote_serverdata" : [
                 cwd + "/payloads/remote_serverdata",
-                cwd + "/payloads/ssh_identity_file"
+                cwd + "/payloads/ssh_identity_file",
+                cwd + "/payloads/VPS_remote_backup.sh"
             ],
             # Files that have MySQL data to be replaced
             "mysql_data" : [

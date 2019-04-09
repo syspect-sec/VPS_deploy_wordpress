@@ -460,18 +460,6 @@ crontab payloads/crons
 echo "[Adding rkhunter to crontabs...]"
 crontab -l | { cat; echo "0 0 * * 0 rkhunter -c --sk"; } | crontab -
 crontab -l | { cat; echo "0 0 * * 0 rpm -V initscripts >> /var/log/initscripts.log"; } | crontab -
-# Install database backup crons
-echo "[Adding MySQL backup to crontabs...]"
-if [ -s payloads/mysql_userdata ]; then
-  while read -r -a mysqlpass
-  do
-    if [ ${mysqlpass[0]} = "backup" ]; then
-      mkdir -p /var/www/html/<github_reponame>/extra_files/database/backups
-      chmod o+w /var/www/html/<github_reponame>/extra_files/database/backups
-      crontab -l | { cat; echo "0 0 * * 1 mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/html/<github_reponame>/backups/db_backup_\$(date +\%m_\%d_\%Y).sql.gz"; } | crontab -
-    fi
-  done < payloads/mysql_userdata
-fi
 # Install a cron to check that MySQL is running at all times
 echo "[Adding MySQL status checking and restart to crontabs...]"
 crontab -l | { cat; echo "* * * * * service mariadb status || service mariadb start"; } | crontab -
@@ -479,6 +467,27 @@ crontab -l | { cat; echo "* * * * * service mariadb status || service mariadb st
 echo "[Adding GitHub and remote database backup to crontabs...]"
 crontab -l | { cat; echo "0 5 * * 1 python ./root/VPS_deploy.py -backup -p $1"; } | crontab -
 echo "[Finished adding crontabs to schedule...]"
+#
+# Prepare location for database backups
+#
+echo "[Adding MySQL backup location...]"
+if [ -s payloads/mysql_userdata ]; then
+  while read -r -a mysqlpass
+  do
+    if [ ${mysqlpass[0]} = "backup" ]; then
+      # Get the GitHub reponame to define the local database backup folder
+      while read -r -a githubuser
+      do
+        # Eliminate comments
+        if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
+          # Create the database backup destination folder and make mysqld permissions
+          mkdir -p /var/www/backups/${githubuser[1]}
+          chown mysqld:mysqld /var/www/backups/${githubuser[1]}
+        fi
+      done < payloads/github_userdata
+    fi
+  done < payloads/mysql_userdata
+fi
 #
 # SSHD Conifiguration
 #
