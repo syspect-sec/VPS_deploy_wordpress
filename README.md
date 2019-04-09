@@ -163,7 +163,7 @@ A modified PHP config (php.ini) file for Centos is also located in the payloads 
 
 *MySQL/MariaDB Configuration*
 
-VPS_deploy.sh will automatically install and configure MySQL/MariaDB.  Standard security practices for MySQL are employed.  Also a backup user is created with only read permissions to all databases and a full database backup is added to the cron scheduler.
+VPS_deploy.sh will automatically install and configure MySQL/MariaDB.  Standard security practices for MySQL are employed.  Also a backup user is created with only read permissions to all databases and a full database backup is added to the cron scheduler. Pay note to the fact that some special characters will break MySQL/MariaDB such as `$` and `!`.  These characters will not work when entered from a script.
 
 ## Other Configuration Details
 

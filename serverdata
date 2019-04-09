@@ -7,6 +7,9 @@
 # from the default value, pseudo-random values will be generated
 # and populated when you first load the payload.
 # Sample:
+#
+# Required Settings
+#
 #IP 123.456.78.9
 #DomainName yoursite.com
 #EmailAddress your@emailaddress.com
@@ -18,6 +21,9 @@
 #NonRootPassword change_this_password
 #MySQLRootPassword change_this_password
 #MySQLBackupPassword change_this_password
+#
+# Optional Settings
+#
 #The PHP version to be installed (5.5, 5.6, 7.1, 7.2)
 #PHPVersion 5.6
 #The datbase application to install (mariadb, mysql, postgres)

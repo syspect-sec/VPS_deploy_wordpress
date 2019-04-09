@@ -472,7 +472,7 @@ if [ -s payloads/mysql_userdata ]; then
 fi
 # Install a cron to check that MySQL is running at all times
 echo "[Adding MySQL status checking and restart to crontabs...]"
-crontab -l | { cat; echo "* * * * * root service mariadb status || service mariadb start"; } | crontab -
+crontab -l | { cat; echo "* * * * * service mariadb status || service mariadb start"; } | crontab -
 # Install GitHub push and scp database backup to remote server
 echo "[Adding GitHub and remote database backup to crontabs...]"
 crontab -l | { cat; echo "0 5 * * 1 python ./root/VPS_deploy.py -backup -p $1"; } | crontab -
