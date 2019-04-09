@@ -274,6 +274,8 @@ then
         # Clone the repo for the site to be installed
         echo "[Cloning repository into web-root directory...]"
         git clone git@github.com:${githubuser[1]}/${githubuser[0]}.git /var/www/html/${githubuser[0]}
+        # Create a `live` branch in the repo
+        (cd /var/www/html/${githubuser[0]} && git branch live)
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"

@@ -8,7 +8,6 @@
 # Author: Joseph Lee
 # Email: joseph@ripplesoftware.ca
 #
-# Move the payload and main script to the server, and run remotely
 echo "[Updating GitHub repository...]"
 if [ -s payloads/id_rsa_github ]
 then
@@ -39,9 +38,16 @@ then
     do
       # Eliminate comments
       if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
-        # Clone the repo for the site to be installed
         echo "[Fetching GitHub repository...]"
         cd /var/www/html/${githubuser[0]}
+        #
+        # Push the live site to the GitHub repository 'live' branch
+        #
+        git fetch . master:live
+        git push origin live
+        #
+        # Pull the changes from the GitHub repository 'master' branch
+        #
         git fetch --all
         echo "[Resetting GitHub repository...]"
         git reset --hard origin/master
