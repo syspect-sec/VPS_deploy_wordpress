@@ -87,7 +87,7 @@ def get_server_data_from_file(cwd):
             # Collect the remote backup IP from config file
             if line.split()[0] == "RemoteBackupIP":
                 server_data.update({'remote_backup_IP' : line.split()[1].strip()})
-                print "Remote server IP: " + server_data['remote_backup_IP']
+                print "Remote backup server IP: " + server_data['remote_backup_IP']
             # Collect the MySQL root password from config file
             if line.split()[0] == "MySQLRootPassword":
                 server_data.update({'mysql_root_password' : line.split()[1].strip()})
@@ -109,9 +109,10 @@ def get_server_data_from_file(cwd):
                 server_data['additional_app_array'] = []
                 server_data.append('additional_app_array', line.split()[1].strip())
                 print "Additional application added: " + line.split()[1].strip()
-    # Check to see the serverdata has been modified
-    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data:
-        print "[You did not add your server config to the serverdata file...]"
+
+    # Check to see the serverdata has all the required fields
+    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" or "root_password" or "non_root_password" or "non_root_username" or "mysql_root_password" or "mysql_backup_password" not in server_data:
+        print "[You did not add the required VPS server config to the serverdata file...]"
         exit()
 
     # Set a false flag if there is no remote server IP
@@ -179,9 +180,9 @@ def prepare_args_array(args_array):
 
     # Update the optional serverdata settings
     # Remote backup server username
-    if "RemoteBackupUsername" in server_data: args_array.update({"remote_backup_username" : server_data['remote_backup_username']})
+    if "remote_backup_username" in server_data: args_array.update({"remote_backup_username" : server_data['remote_backup_username']})
     # Remote backup server IP
-    if "RemoteBackupIP" in server_data: args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
+    if "remote_backup_IP" in server_data: args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
     # Update the version of PHP to be installed
     if "PHP_version" in server_data: args_array.update({"PHP_version" : server_data['PHP_version']})
     # Update the version of PHP to be installed
@@ -685,13 +686,6 @@ def initialize_payload(args_array):
     if args_array['current_admin_email'] != args_array['admin_email']:
         print "- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email']
         logger.info("- Initializing the payload admin email from " + args_array['current_admin_email'] + " to " + args_array['admin_email'])
-    # Log and stdout the remote backup server data changes to be made
-    if args_array['current_remote_backup_username'] != args_array['remote_backup_username']:
-        print "- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username']
-        logger.info("- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username'])
-    if args_array['current_remote_backup_IP'] != args_array['remote_backup_IP']:
-        print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP']
-        logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
     # Log and Stdout the userdata changes to be made
     if args_array['current_root_password'] != args_array['root_password'] or args_array['current_non_root_password'] != args_array['non_root_password'] or args_array['current_non_root_username'] != args_array['non_root_username']:
         print "- Initializing the payload userdata"
@@ -700,6 +694,16 @@ def initialize_payload(args_array):
     if args_array['current_github_username'] != args_array['github_username'] or args_array['current_github_reponame'] != args_array['github_reponame']:
         print "- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame']
         logger.info("- Initializing the payload GitHub repo from " + args_array['current_github_username'] + ":" + args_array['current_github_reponame'] + " to " + args_array['github_username'] + ":" + args_array['github_reponame'])
+
+    # Log and stdout the remote backup server data changes to be made
+    if args_array['remote_backup_IP'] != False:
+        if args_array['current_remote_backup_username'] != args_array['remote_backup_username']:
+            print "- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username']
+            logger.info("- Initializing the payload remote server username from " + args_array['current_remote_backup_username'] + " to " + args_array['remote_backup_username'])
+        if args_array['current_remote_backup_IP'] != args_array['remote_backup_IP']:
+            print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP']
+            logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
+
 
     # Set a variable to count the number of replacements found
     replacement_count = 0
@@ -813,6 +817,21 @@ def initialize_single_file(key, args_array, filename):
                         print "[Found IP regex to be replaced...]"
                         line = line.replace(args_array['current_httpd_redirect_IP'], args_array['new_httpd_redirect_IP'])
                         replacement_count += 1
+                    # Replace any modified instances of the non root password
+                    if args_array['current_non_root_password'] in line:
+                        print "[Found non root password to be replaced...]"
+                        line = line.replace(args_array['current_non_root_password'], args_array['non_root_password'])
+                        replacement_count += 1
+                    # Replace any modified instances of the non root username
+                    if args_array['current_non_root_username'] in line:
+                        print "[Found non root username to be replaced...]"
+                        line = line.replace(args_array['current_non_root_username'], args_array['non_root_username'])
+                        replacement_count += 1
+                    # Replace any instances of the current/default http mod rewrite regex
+                    if args_array['current_httpd_redirect_IP'] in line:
+                        print "[Found IP regex to be replaced...]"
+                        line = line.replace(args_array['current_httpd_redirect_IP'], args_array['new_httpd_redirect_IP'])
+                        replacement_count += 1
                 if key == "github_data":
                     # Replace any modified instances of the current/default GitHub userdata
                     if args_array['current_github_username'] in line:
@@ -825,8 +844,6 @@ def initialize_single_file(key, args_array, filename):
                         line = line.replace(args_array['current_github_reponame'], args_array['github_reponame'])
                         replacement_count += 1
                 if key == "remote_serverdata":
-                    print ("Replacing remote serverdata in: " + filename + "\n")
-                    print ("Line: " + line + "\n")
                     print ("Looking for IP: " + args_array['current_remote_backup_username'] + "\n")
                     print ("Looking for username: " + args_array['current_remote_backup_IP'] + "\n")
                     # Replace any modified instances of the current/default remote backup username
@@ -876,19 +893,12 @@ def build_command_arguments(args, args_array):
         args.pop(0)
 
         # First check if opendev, closedev arg issued
-        if len(args) == 1:
-            if "-opendev" in args:
+        if "-closedev" in args or "-opendev" in args:
                 # Return the command args array
                 command_args['command'] = args[0].replace('-', '')
                 return command_args
-            elif "-closedev" in args:
-                # Return the command args array
-                command_args['command'] = args[0].replace('-', '')
-                return command_args
-            else: return False
-
-        # If not opendev or closedev there needs to be 3 or 4 arguments
-        elif len(args) <= 7:
+        # If not then process arguments as normal
+        else:
             if "-p" in args:
                 # Calculate position of -p argument
                 password_flag_position = args.index("-p")
@@ -906,8 +916,14 @@ def build_command_arguments(args, args_array):
                 command_args.update({"key" : key})
             # If there is no password argument, then the command line is failed
             elif "-p" not in args:
-                print "password please..."
-                return False
+                # Request the user to put the password into command line
+                password_input = raw_input("Password please... >")
+                # encrypt the raw_password into the form used for encryption
+                key = hashlib.sha256(password_input).digest()
+                # Append the raw password onto the command line argument array
+                command_args.update({"raw_password" : password_input})
+                # Append the key back onto the end of the command line arguement array
+                command_args.update({"key" : key})
 
             # Look for infile in command args
             if "-if" in args:
@@ -967,10 +983,6 @@ def build_command_arguments(args, args_array):
             # Return the command args array
             return command_args
 
-        # There are an incorrect number of arguments
-        else:
-            return False
-
     except Exception as e:
         # Collect the exception information
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -981,12 +993,14 @@ def build_command_arguments(args, args_array):
         logger.error('Failed to build command arguments: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
         return False
 
+
 # Build the output for command line instructions
 def print_command_help_output():
-    argument_output = "Notice : You need to run this script as root.\n"
-    argument_output += "Notice : -opendev & -closedev do not require -p <password>.  All other commands do.\n"
+    argument_output += "\n"
     argument_output += "Deploy usage : VPS_deploy.py [-load | -open | -deploy | -remotedeploy | -purge | -update] [-p <password>] | -backup <password>| -migrate -if <current url> -of <destination url>\n"
-    argument_output += "Open/close the web-root for non-root read/write permissions: VPS_deploy [-opendev | -closedev]\n"
+    argument_output += "\n"
+    argument_output += "To open/close the web-root for non-root read/write permissions: VPS_deploy [-opendev | -closedev]\n"
+    argument_output += "\n"
     argument_output += "-h, -help : print help menu\n"
     argument_output += "-load : encrypt and compress the payload to be deployed\n"
     argument_output += "-open : open the payload for editing\n"
@@ -997,6 +1011,9 @@ def print_command_help_output():
     argument_output += "-backup : backup the GitHub repository and move the databse backups to backup server\n"
     argument_output += "-opendev : open the permissions on the web-root for editing\n"
     argument_output += "-closedev : close the permissions on the web-root for editing\n"
+    argument_output += "-migrate : modify an SQL script to change the URL\n"
+    argument_output += "-if : path to SQL script to change the URL in\n"
+    argument_output += "-of : path to SQL script to change the URL in\n"
     argument_output += "-p <password> : password required to decrypt the data payload\n"
     print argument_output
 
@@ -1024,7 +1041,7 @@ if __name__ == '__main__':
         # VPS Deploy flags
         "app_name" : "VPS Deploy",
         "sandbox_mode" : True,
-        "log_filename" : cwd + "log",
+        "log_filename" : cwd + "/log",
         "cwd" : cwd + "/",
         # Default site URL in the vanilla version of the package
         "default_site_URI" : "<yoursite.com>",
