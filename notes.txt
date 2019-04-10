@@ -26,3 +26,9 @@ warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.22-1.w7.x86_64
 -all mysql scripts run successfully (content database working from MySQL cli but not script in VPS_deploy)
 -apache config locked --check
 -apache running --check
+
+
+warning: /var/tmp/rpm-tmp.Q6PAuU: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
+warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.27-1.w7.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
+
+Warning: RPMDB altered outside of yum.

@@ -111,7 +111,7 @@ def get_server_data_from_file(cwd):
                 print "Additional application added: " + line.split()[1].strip()
 
     # Check to see the serverdata has all the required fields
-    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" or "root_password" or "non_root_password" or "non_root_username" or "mysql_root_password" or "mysql_backup_password" not in server_data:
+    if "IP" not in server_data or "site_URI" not in server_data or "admin_email" not in server_data or "root_password" not in server_data or "non_root_password" not in server_data or "non_root_username" not in server_data or "mysql_root_password" not in server_data or "mysql_backup_password" not in server_data:
         print "[You did not add the required VPS server config to the serverdata file...]"
         exit()
 
@@ -246,6 +246,7 @@ def store_critical_information(args_array):
 
     try:
         for critical_item in args_array['critical_payload_information_files']:
+            #print "Critical Information Filename: " + critical_item['filename']
             # Read the lines of the critical file into array
             with open(critical_item['filename'], "r") as critical_item_file:
                 file_array = critical_item_file.readlines()
@@ -259,7 +260,7 @@ def store_critical_information(args_array):
                 critical_information_string += "\n" + critical_item['header'] + ": \n"
                 # Append onto the output string
                 for line in file_array:
-                    if line.strip()[:0] != "#":
+                    if line.strip()[0] != "#":
                         critical_information_string += line
 
     except Exception as e:
@@ -721,7 +722,6 @@ def initialize_payload(args_array):
             print args_array['current_httpd_redirect_IP'] + " - " + args_array['new_httpd_redirect_IP']
 
         for item in values:
-            print item
             # For any directories in the list
             if os.path.isdir(item):
                 for filename in os.listdir(item):
@@ -817,6 +817,11 @@ def initialize_single_file(key, args_array, filename):
                         print "[Found IP regex to be replaced...]"
                         line = line.replace(args_array['current_httpd_redirect_IP'], args_array['new_httpd_redirect_IP'])
                         replacement_count += 1
+                    # Replace any modified instances of the root password
+                    if args_array['current_root_password'] in line:
+                        print "[Found root password to be replaced...]"
+                        line = line.replace(args_array['current_root_password'], args_array['root_password'])
+                        replacement_count += 1
                     # Replace any modified instances of the non root password
                     if args_array['current_non_root_password'] in line:
                         print "[Found non root password to be replaced...]"
@@ -843,19 +848,29 @@ def initialize_single_file(key, args_array, filename):
                         print "[Found GitHub reponame to be replaced...]"
                         line = line.replace(args_array['current_github_reponame'], args_array['github_reponame'])
                         replacement_count += 1
+                if key == "mysql_data":
+                    # Replace any modified instances of the current/default MySQL root password
+                    if args_array['current_mysql_root_password'] in line:
+                        print "[Found MySQL root password to be replaced...]"
+                        line = line.replace(args_array['current_mysql_root_password'], args_array['mysql_root_password'])
+                        replacement_count += 1
+                    # Replace any modified instances of the current/default MySQL backup user password
+                    if args_array['current_mysql_backup_password'] in line:
+                        print "[Found MySQL backup password to be replaced...]"
+                        line = line.replace(args_array['current_mysql_backup_password'], args_array['mysql_backup_password'])
+                        replacement_count += 1
                 if key == "remote_serverdata":
-                    print ("Looking for IP: " + args_array['current_remote_backup_username'] + "\n")
-                    print ("Looking for username: " + args_array['current_remote_backup_IP'] + "\n")
-                    # Replace any modified instances of the current/default remote backup username
-                    if args_array['current_remote_backup_username'] in line:
-                        print ("[Found remote server username to be replaced...]")
-                        line = line.replace(args_array['current_remote_backup_username'], args_array['remote_backup_username'])
-                        replacement_count += 1
-                    # Replace any modified instances of the current/default remote backup IP
-                    if args_array['current_remote_backup_IP'] in line:
-                        print ("[Found remote server IP to be replaced...]")
-                        line = line.replace(args_array['current_remote_backup_IP'], args_array['remote_backup_IP'])
-                        replacement_count += 1
+                    if args_array['remote_backup_IP'] != False:
+                        # Replace any modified instances of the current/default remote backup username
+                        if args_array['current_remote_backup_username'] in line:
+                            print ("[Found remote server username to be replaced...]")
+                            line = line.replace(args_array['current_remote_backup_username'], args_array['remote_backup_username'])
+                            replacement_count += 1
+                        # Replace any modified instances of the current/default remote backup IP
+                        if args_array['current_remote_backup_IP'] in line:
+                            print ("[Found remote server IP to be replaced...]")
+                            line = line.replace(args_array['current_remote_backup_IP'], args_array['remote_backup_IP'])
+                            replacement_count += 1
 
             # Check if the line is a blank line
             if len(line.strip("\n")) == 0:

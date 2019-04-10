@@ -1,8 +1,2 @@
-# VPS Deploy will require a root user password and a non-root user password.
-# SSH root access will be turned off, so you will need to `su` into root user
-# to perform administrative tasks on the server.
-# Samples
-# root change_this_password
-# non_root_user change_this_password
-root <change_root_password>
-<default_non_root_username> <change_root_password>
+root <default_root_password>
+<default_non_root_username> <default_non_root_password>

@@ -37,12 +37,13 @@ systemctl restart systemd-journald
 #
 # Creat Swap space and enable
 #
-fallocate -l 1G /swapfile
+sudo dd if=/dev/zero of=/swapfile count=1096 bs=1MiB
 chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
 echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
 swapon --show
+swapon --summary
 free -h
 # Install Firewalld
 #
