@@ -113,7 +113,7 @@ echo "[VPS_deploy has finished pushing changes to GitHub repository...]"
 # Clear the command line history
 echo "[Removing command line history...]"
 history -c
-> /root/.bash_history
+rm -rf /root/.bash_history
 echo "[Command line history removed...]"
 echo "[Removing SSH directory...]"
 rm -rf /root/.ssh

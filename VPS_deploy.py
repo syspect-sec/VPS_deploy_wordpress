@@ -96,14 +96,28 @@ def get_server_data_from_file(cwd):
             if line.split()[0] == "MySQLBackupPassword":
                 server_data.update({'mysql_backup_password' : line.split()[1].strip()})
                 print "MySQL backup password: " + server_data['mysql_backup_password']
+            # Collect the WordPress uploads dir from config file
+            if line.split()[0] == "UploadsDirLocalPath":
+                server_data.update({'uploads_dirpath' : line.split()[1].strip()})
+                print ("WordPress uploads dir: " + server_data['uploads_dirpath'])
             # Collect the PHP Version from config file
             if line.split()[0] == "PHPVersion":
-                server_data.update({'PHP_version' : line.split()[1].strip()})
-                print "PHP version: " + server_data['PHP_version']
+                # Check that value is allowed
+                if line.split()[1].strip() in args_array['allowed_PHP_versions']:
+                    server_data.update({'PHP_version' : line.split()[1].strip()})
+                    print "PHP version: " + server_data['PHP_version']
+                else:
+                    print "[PHP version specified in serverdata is not valid...]"
+                    exit()
             # Collect the DB Application from config file
             if line.split()[0] == "DBApplication":
-                server_data.update({'DB_application' : line.split()[1].strip()})
-                print "Database application: " + server_data['DB_appplication']
+                # Check that value is allowed
+                if line.split()[1].strip() in args_array['allowed_db_versions']:
+                    server_data.update({'db_application' : line.split()[1].strip()})
+                    print "Database application: " + server_data['db_application']
+                else:
+                    print "[Database version specified in serverdata is not valid...]"
+                    exit()
             # Collect the Additional applications from config file
             if line.split()[0] == "AdditionalApplication":
                 server_data['additional_app_array'] = []
@@ -119,6 +133,18 @@ def get_server_data_from_file(cwd):
     if "remote_backup_IP" not in server_data:
         server_data.update({'remote_backup_username' : False})
         server_data.update({'remote_backup_IP' : False})
+
+    # Set WordPress uploads dirpath variable to false if not included in serverdata file
+    if "uploads_dirpath" not in server_data:
+        server_data.update({'uploads_dirpath' : False})
+
+    # Set PHP Version variable to false if not included in serverdata file
+    if "PHP_version" not in server_data:
+        server_data.update({'PHP_version' : False})
+
+    # Set PHP Version variable to false if not included in serverdata file
+    if "DBApplication" not in server_data:
+        server_data.update({'db_application' : False})
 
     # Print message to stdout
     print "[Server data has been parsed to get the configuration...]"
@@ -179,14 +205,16 @@ def prepare_args_array(args_array):
     args_array.update({"mysql_backup_password" : server_data['mysql_backup_password']})
 
     # Update the optional serverdata settings
+    # WordPress uploads directory to move
+    if "uploads_dirpath" in server_data: args_array.update({"uploads_dirpath" : server_data['uploads_dirpath']})
     # Remote backup server username
     if "remote_backup_username" in server_data: args_array.update({"remote_backup_username" : server_data['remote_backup_username']})
     # Remote backup server IP
     if "remote_backup_IP" in server_data: args_array.update({"remote_backup_IP" : server_data['remote_backup_IP']})
     # Update the version of PHP to be installed
     if "PHP_version" in server_data: args_array.update({"PHP_version" : server_data['PHP_version']})
-    # Update the version of PHP to be installed
-    if "DB_application" in server_data: args_array.update({"DB_application" : server_data['DB_application']})
+    # Update the version of database to be installed
+    if "db_application" in server_data: args_array.update({"db_application" : server_data['db_application']})
     # Update the additional applications array
     if "additional_app_array" in server_data: args_array.update({"additional_app_array" : server_data['additional_app_array']})
 
@@ -208,14 +236,29 @@ def prepare_args_array(args_array):
 # Loads the payload and returns args_array
 def load_payload(args_array):
 
-    # Remove any default settings from the payload
-    initialize_payload(args_array)
-    # Store the critical information from the payload
-    args_array = store_critical_information(args_array)
+    # To check if the payload is on server or not
+    # Check if server data file exists and if not then
+    # do not initialize the payload
+    if os.path.isfile(args_array['cwd'] + 'serverdata'):
+        # Remove any default settings from the payload
+        initialize_payload(args_array)
+        # Store the critical information from the payload
+        args_array = store_critical_information(args_array)
+        # Output the critical information from the payload
+        output_critical_information(args_array)
+
     # Create the payload
     create_payload(args_array)
-    # Output the critical information from the payload
-    output_critical_information(args_array)
+
+    # Return args_array
+    return args_array
+
+# Closes the payload and returns args_array
+def close_payload(args_array):
+
+    # Create the payload
+    create_payload(args_array)
+
     # Return args_array
     return args_array
 
@@ -594,8 +637,8 @@ def create_payload(args_array):
         shutil.rmtree(args_array['payload_dirpath'])
 
         # Print message and log
-        print "[Payload loaded and ready for deployment... ]"
-        logger.info("[Payload loaded and ready for deployment... ]")
+        print "[Payload loaded... ]"
+        logger.info("[Payload loaded... ]")
 
     except Exception as e:
         print traceback
@@ -676,6 +719,9 @@ def initialize_payload(args_array):
                 args_array['current_github_username'] = item.split()[1].strip()
             if item.split()[0] == "GitHubRepo":
                 args_array['current_github_reponame'] = item.split()[1].strip()
+            # Get the WordPress uploads dirpath
+            if item.split()[0] == "UploadsDirLocalPath":
+                args_array['uploads_dirpath'] = item.split()[1].strip()
 
     # Log and Stdout the server data changes to be made
     if args_array['current_site_IP'] != args_array['site_IP']:
@@ -705,6 +751,17 @@ def initialize_payload(args_array):
             print "- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP']
             logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
 
+
+    # Update the PHP Version and MySQL version files in the payload
+    if args_array['PHP_version'] != False:
+        # Open the file and replace the existing values
+        with open(args_array['PHP_version_filename'], "w") as phpversion_file:
+            phpversion_file.write(args_array['PHP_version'])
+    # Update the PHP Version and MySQL version files in the payload
+    if args_array['db_application'] != False:
+        # Open the file and replace the existing values
+        with open(args_array['db_version_filename'], "w") as db_version_file:
+            db_version_file.write(args_array['db_application'])
 
     # Set a variable to count the number of replacements found
     replacement_count = 0
@@ -759,6 +816,9 @@ def store_new_configuration_settings(args_array):
         init_as.write("MySQLBackupPassword " + args_array['mysql_backup_password'] + "\n")
         init_as.write("GitHubUser " + args_array['github_username'] + "\n")
         init_as.write("GitHubRepo " + args_array['github_reponame'] + "\n")
+        if args_array['uploads_dirpath'] != False:
+            init_as.write("UploadsDirLocalPath " + args_array['uploads_dirpath'] + "\n")
+
         print "[Finished storing new configuration settings...]"
 
 # Recieves a filename and looks for infile and changes to outfile
@@ -1019,6 +1079,7 @@ def print_command_help_output():
     argument_output += "-h, -help : print help menu\n"
     argument_output += "-load : encrypt and compress the payload to be deployed\n"
     argument_output += "-open : open the payload for editing\n"
+    argument_output += "-close : close the payload for editing\n"
     argument_output += "-deploy : deploy the payload to the VPS\n"
     argument_output += "-remotedeploy : move payload and script to remote server, deploy, then remove payload\n"
     argument_output += "-purge : deploy the payload and remove payload files\n"
@@ -1059,9 +1120,9 @@ if __name__ == '__main__':
         "log_filename" : cwd + "/log",
         "cwd" : cwd + "/",
         # Default site URL in the vanilla version of the package
-        "default_site_URI" : "<yoursite.com>",
+        "default_site_URI" : "<default_site_URI>",
         # Default IP address in the vanilla version of the package
-        "default_site_IP" : "<123.456.78.9>",
+        "default_site_IP" : "<default_site_IP>",
         # Default remote backup server username in the vanilla version of the package
         "default_remote_backup_username" : "<default_remote_backup_username>",
         # Default remote backup server IP address in the vanilla version of the package
@@ -1069,9 +1130,9 @@ if __name__ == '__main__':
         # Default admin emaill address in the vanilla version of the package
         "default_admin_email" : "<your@emailaddress.com>",
         # Default github username in the vanilla version of the package
-        "default_github_username" : "<github_username>",
+        "default_github_username" : "<default_github_username>",
         # Default github repo username in the vanilla version of the package
-        "default_github_reponame" : "<github_reponame>",
+        "default_github_reponame" : "<default_github_reponame>",
         # Default non-root username in the vanilla version of the package
         "default_non_root_username" : "<default_non_root_username>",
         # Default root password in the vanilla version of the package
@@ -1083,9 +1144,13 @@ if __name__ == '__main__':
         # Default MySQL backup password in the vanilla version of the package
         "default_mysql_backup_password" : "<default_mysql_backup_password>",
         # Allowed command line args
-		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
+		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-close", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
+        # Allowed PHP version strings in the serverdata file
+		"allowed_PHP_versions" : ["7.2", "7.1", "5.6", "5.5"],
+        # Allowed database version strings in the serverdata file
+		"allowed_db_versions" : ["mariadb", "mysql", "postgres"],
         # Command args that are not allowed with purge
-        'not_with_purge' : ["load", "open", "opendev", "closedev", "update", "migrate", "backup"],
+        'not_with_purge' : ["load", "open", "close", "opendev", "closedev", "update", "migrate", "backup"],
         # Payload and required_files directory path
         "payload_dirpath" : payload_dirpath,
         # File to check if payload locked or not
@@ -1094,12 +1159,16 @@ if __name__ == '__main__':
         "payload_init_filename" : payload_dirpath + ".init_as",
         # File containing the remote backup IP address
         "payload_remote_serverdata_filename" : payload_dirpath + "remote_serverdata",
+        # File containing the PHP version to be installed
+        "PHP_version_filename" : payload_dirpath + "php_version",
+        # File containing the database version to be installed
+        "db_version_filename" : payload_dirpath + "db_version",
         # Filepath to zipped compressed payload
         "compressed_payload_filename" : "payload",
         # Filename of the main VPS_deploy script
         "VPS_deploy_script_deploy_filename" : "payloads/VPS_deploy.sh",
         # Filename of the script to move the payload to the remote server
-        "VPS_deploy_script_remote_filename" : "VPS_remote.sh",
+        "VPS_remote_deploy_script_filename" : "VPS_remote.sh",
         # Filename of script to update GitHub repository
         "VPS_update_git_filename" : "payloads/VPS_update_git.sh",
         # Filename of script to update GitHub repository
@@ -1115,7 +1184,8 @@ if __name__ == '__main__':
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/VPS_deploy.sh",
-                cwd + "/payloads/userdata"
+                cwd + "/payloads/userdata",
+                cwd + "/payloads/VPS_deploy.sh"
             ],
             # Files that have GitHub data to be replaced
             "github_data" : [
@@ -1201,7 +1271,7 @@ if __name__ == '__main__':
     # Main function post initial check starts here
     else:
 
-        # If the VPS_deploy ready to be sent to the server
+        # If command issue to initialize payload
         if args_array['command_args']['command'] == "load":
             # Check if payload is open
             if is_payload_open(args_array):
@@ -1210,9 +1280,9 @@ if __name__ == '__main__':
                 # Load the payload
                 args_array = load_payload(args_array)
             else:
-                print "[Payload already loaded for deployment]"
+                print "[Payload already loaded for deployment...]"
 
-        # If the VPS_deploy ready to be sent to the server
+        # If command issue to open payload
         elif args_array['command_args']['command'] == "open":
             # Check if payload is open
             if is_payload_open(args_array):
@@ -1221,7 +1291,17 @@ if __name__ == '__main__':
                 # Get all files out of payload
                 open_payload(args_array)
 
-        # If the VPS_deploy is on the server and ready to be deployed
+        # If command issue to close payload
+        elif args_array['command_args']['command'] == "close":
+            # Check if payload is open
+            if is_payload_open(args_array) == False:
+                print "[Payload already closed...]"
+            else:
+                print "[Closing Payload...]"
+                # Close the payload
+                close_payload(args_array)
+
+        # If command issue to deploy payload
         elif args_array['command_args']['command'] == "deploy":
             # Check if the payload is open
             if is_payload_open(args_array) == False:
@@ -1233,7 +1313,7 @@ if __name__ == '__main__':
             # Deploy payload
             if args_array['command_args']['purge'] == True:
                 # Run the configured payload as bash script with flag set to deploy
-                subprocess.call(args_array['VPS_deploy_script_deploy_filename'] + " " + args_array['command_args']['raw_password'] + " 1  >> VPS_deploy.log", shell=True)
+                subprocess.call(args_array['VPS_deploy_script_deploy_filename'] + " " + args_array['command_args']['raw_password'] + " 1 >> VPS_deploy.log", shell=True)
                 # Output to stdout, stderr, and VPS_deploy.log
                 #subprocess.call(args_array['VPS_deploy_script_deploy_filename'] + " " + args_array['command_args']['raw_password'] + " 1  2>&1 | tee VPS_deploy.log", shell=True)
             else:
@@ -1244,9 +1324,9 @@ if __name__ == '__main__':
 
             # Close the payload
             if is_payload_open(args_array) == False:
-                print "[Opening Payload...]"
-                # Load the payload
-                args_array = load_payload(args_array)
+                print "[Closing Payload...]"
+                # Close the payload
+                args_array = close_payload(args_array)
 
         # If VPS_deploy is on the client and ready to be deployed
         elif args_array['command_args']['command'] == "remotedeploy":
@@ -1264,11 +1344,11 @@ if __name__ == '__main__':
             if args_array['command_args']['purge'] == True:
                 print "[Deploying payload to remote server with purge...]"
                 # Move payload to server, run, and remove the payload
-                subprocess.call("./" + args_array['VPS_deploy_script_remote_filename'] + " " + args_array['command_args']['raw_password'] + " 1" , shell=True)
+                subprocess.call("./" + args_array['VPS_remote_deploy_script_filename'] + " " + args_array['command_args']['raw_password'] + " 1", shell=True)
             else:
                 print "[Deploying payload to remote server...]"
                 # Move payload to server, and run
-                subprocess.call("./" + args_array['VPS_deploy_script_remote_filename'] + " " + args_array['command_args']['raw_password'] + " 0" , shell=True)
+                subprocess.call("./" + args_array['VPS_remote_deploy_script_filename'] + " " + args_array['command_args']['raw_password'] + " 0", shell=True)
 
             # Open the payload again
             if is_payload_open(args_array) == False:
@@ -1291,7 +1371,7 @@ if __name__ == '__main__':
 
             print "[Closing payload...]"
             # Close the payload
-            load_payload(args_array)
+            close_payload(args_array)
 
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "opendev":
@@ -1327,4 +1407,4 @@ if __name__ == '__main__':
 
             print "[Closing payload...]"
             # Close the payload
-            load_payload(args_array)
+            close_payload(args_array)

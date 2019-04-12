@@ -1,4 +1,4 @@
 # This file contains lines that will be appended to `chown` command
 # and issued on the server.  You can use -R and specify directories or files
 #-R apache:apache /var/www/yoursite/example_directory
--R apache:apache /var/www/html/<github_reponame>
+-R apache:apache /var/www/html/<default_github_reponame>

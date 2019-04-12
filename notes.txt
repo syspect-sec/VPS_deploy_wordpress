@@ -27,6 +27,7 @@ warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.22-1.w7.x86_64
 -apache config locked --check
 -apache running --check
 
+DEPRECATION: Python 2.7 will reach the end of its life on January 1st, 2020. Please upgrade your Python as Python 2.7 won't be maintained after that date. A future version of pip will drop support for Python 2.7.
 
 warning: /var/tmp/rpm-tmp.Q6PAuU: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
 warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.27-1.w7.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY

@@ -7,7 +7,14 @@ do
   if [[ ${sshdata[0]:0:1} != "#" && ! -z "${sshdata[0]}" ]]; then
     if [ ${sshdata[0]} = "IP" ]; then
       # Scan the key into known_hosts
-      ssh-keyscan -H ${sshdata[1]} >> /home/$USER/.ssh/known_hosts
+      # Check if mac or linux version of known_hosts locally
+      if [ -e /home/$USER/.ssh/known_hosts ]; then
+        ssh-keygen -R "${sshdata[1]}"
+        #ssh-keyscan -H ${sshdata[1]} >> /home/$USER/.ssh/known_hosts
+      elif [ -e /Users/$USER/.ssh/known_hosts ]; then
+        ssh-keygen -R "${sshdata[1]}"
+        #ssh-keyscan -H ${sshdata[1]} >> /Users/$USER/.ssh/known_hosts
+      fi
       # Install the epel release
       ssh root@${sshdata[1]} 'yum install -y epel-release'
       echo "[Added epel-release repository to server...]"
@@ -29,10 +36,19 @@ do
       echo "[Moving payload and script to server...]"
       # Move the payoad
       scp payload.zip root@${sshdata[1]}:~/
-      # Move the serverdata file
-      scp serverdata root@${sshdata[1]}:~/
       # Move the main script
       scp VPS_deploy.py root@${sshdata[1]}:~/
+      # Move the WordPress uploads directory if one is specified
+      while read -r -a uploadsdirpath
+      do
+        # Eliminate all comment lines
+        if [[ ${uploadsdirpath[0]:0:1} != "#" && ! -z "${uploadsdirpath[0]}" ]]; then
+          if [ ${uploadsdirpath[0]} = "UploadsDirLocalPath" ]; then
+            tar cvf - ${uploadsdirpath[1]} | gzip > $PWD/uploads.tar.gz
+            scp uploads.tar.gz root@${sshdata[1]}:~/
+          fi
+        fi
+      done < serverdata
       # If the exit code was successfull
       if [ $? -eq 0 ]; then
           echo "[Payload and script moved to server...]"

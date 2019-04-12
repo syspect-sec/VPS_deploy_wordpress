@@ -129,20 +129,26 @@ echo "[Installing Apache...]"
 yum install -y httpd
 echo "[Apache installed...]"
 # Install PHP
-# Step 1: Install Webstatic repositories
 echo "[Installing PHP...]"
 #
-# Install PHP 7.1 and necessary extensions
+# Install PHP according to serverdata or latest if not set
 #
-rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
-#
-# Install PHP 5.5
-#
-#rpm -Uvh http://vault.centos.org/7.0.1406/extras/x86_64/Packages/epel-release-7-5.noarch.rpm
-#yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
-#yum --enablerepo=remi,remi-php55 -y install php php-common
-#yum --enablerepo=remi,remi-php55 -y install php-cli php-pdo php-mysql php-mysqlnd php-gd php-mcrypt php-xml php-simplexml php-zip
+if [ -s payloads/phpversion ]
+then
+  echo "[Starting to process MySQL/MariaDB user config...]"
+  while read -r -a phpversion
+  do
+    if [ ${phpversion} = "7.2" ]; then
+      ./payloads/php_7_2.sh
+    elif [ ${phpversion} = "7.1" ]; then
+      ./payloads/php_7_1.sh
+    elif [ ${phpversion} = "5.6" ]; then
+      ./payloads/php_5_6.sh
+    elif [ ${phpversion} = "5.5" ]; then
+      ./payloads/php_5_5.sh
+    fi
+  done < payloads/php_version
+fi
 echo "[PHP installed...]"
 # Install MySQL / MariaDB
 # NOTE: Check that differences between MySQL and MariaDB
@@ -281,6 +287,19 @@ then
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"
         echo "[GitHub repo successfully cloned...]"
+        # Check for and move WordPress uploads directory
+        echo "[Checking for WordPress uploads directory to move...]"
+        if [ -e uploads.tar.gz ]
+        then
+          echo "[Moving uploads directory to WordPress installation...]"
+          rm -rf /var/www/html/${githubuser[0]}/wp-content/uploads
+          mv uploads.tar.gz /var/www/html/${githubuser[0]}/wp-content
+          echo "[Upacking WordPress uploads directory...]"
+          gunzip /var/www/html/${githubuser[0]}/wp-content/uploads.tar.gz
+          echo "[WordPress uploads directory moved and unpacked...]"
+        else
+          echo "[No WordPress uploads directory found...]"
+        fi
         # Set permissions files for host domain
         echo "[Re-writing ownership...]"
         chown -R apache:apache /var/www/html/${githubuser[0]}
@@ -448,9 +467,7 @@ echo "[Installing required python packages...]"
 yum install -y python-dateutil
 yum install -y MySQL-python
 yum install -y mysql-devel
-pip install psycopg2
-pip install psycopg2-binary
-echo "[Installing required python packages...]"
+echo "[Finished installing required python packages...]"
 #
 # Install Crontab Schedule Jobs
 #
@@ -472,23 +489,16 @@ echo "[Finished adding crontabs to schedule...]"
 # Prepare location for database backups
 #
 echo "[Adding MySQL backup location...]"
-if [ -s payloads/mysql_userdata ]; then
-  while read -r -a mysqlpass
-  do
-    if [ ${mysqlpass[0]} = "backup" ]; then
-      # Get the GitHub reponame to define the local database backup folder
-      while read -r -a githubuser
-      do
-        # Eliminate comments
-        if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
-          # Create the database backup destination folder and make mysqld permissions
-          mkdir -p /var/www/backups/${githubuser[1]}
-          chown mysqld:mysqld /var/www/backups/${githubuser[1]}
-        fi
-      done < payloads/github_userdata
-    fi
-  done < payloads/mysql_userdata
-fi
+# Get the GitHub reponame to define the local database backup folder
+while read -r -a githubuser
+do
+  # Eliminate comments
+  if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
+    # Create the database backup destination folder and make mysqld permissions
+    mkdir -p /var/www/backups/${githubuser[1]}
+    chmod o+w /var/www/backups/${githubuser[1]}
+  fi
+done < payloads/github_userdata
 #
 # SSHD Conifiguration
 #
@@ -515,15 +525,7 @@ systemctl status httpd
 # Move the payload and main script to the server, and run remotely
 # TODO: use tool to autocomplete the requried input such as email address, etc. "2" into the certbot command
 echo "[Registering a SSL certificate with Let's Encrypt...]"
-while read -r -a sshdata
-do
-  # Eliminate all comment lines
-  if [[ ${sshdata[0]:0:1} != "#" && ! -z "${sshdata[0]}" ]]; then
-    if [ ${sshdata[0]} = "DomainName" ]; then
-      certbot --non-interactive --agree-tos --redirect --hsts --uir -m <your@emailaddress.com> --apache -d ${sshdata[1]} -d www.${sshdata[1]}
-    fi
-  fi
-done < serverdata
+certbot --non-interactive --agree-tos --redirect --hsts --uir -m <your@emailaddress.com> --apache -d <default_site_URI> -d www.<default_site_URI>
 echo "[SSL certificate registered...]"
 /bin/cp payloads/ssl.conf /etc/httpd/conf.d/ssl.conf
 echo "[Moved SSL configuration file to Apache...]"
@@ -595,7 +597,7 @@ do
     if [ ${finish[0]} = "close" ] && [ ${finish[1]} = "1" ]; then
       # Close the payload
       echo "[Closing the payload...]"
-      python ./VPS_deploy.py -load -p $5
+      python ./VPS_deploy.py -close -p $1
       echo "[Payload closed...]"
     fi
   fi
