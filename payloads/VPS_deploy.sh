@@ -131,24 +131,10 @@ echo "[Apache installed...]"
 # Install PHP
 echo "[Installing PHP...]"
 #
-# Install PHP according to serverdata or latest if not set
+# Install PHP 7.1 and necessary extensions
 #
-if [ -s payloads/phpversion ]
-then
-  echo "[Starting to process MySQL/MariaDB user config...]"
-  while read -r -a phpversion
-  do
-    if [ ${phpversion} = "7.2" ]; then
-      ./payloads/php_7_2.sh
-    elif [ ${phpversion} = "7.1" ]; then
-      ./payloads/php_7_1.sh
-    elif [ ${phpversion} = "5.6" ]; then
-      ./payloads/php_5_6.sh
-    elif [ ${phpversion} = "5.5" ]; then
-      ./payloads/php_5_5.sh
-    fi
-  done < payloads/php_version
-fi
+rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
 echo "[PHP installed...]"
 # Install MySQL / MariaDB
 # NOTE: Check that differences between MySQL and MariaDB
@@ -476,7 +462,7 @@ echo "[Intializing crontab and adding crontabs from payload...]"
 crontab payloads/crons
 # Install cron for rkhunter
 echo "[Adding rkhunter to crontabs...]"
-crontab -l | { cat; echo "0 0 * * 0 rkhunter -c --sk"; } | crontab -
+#crontab -l | { cat; echo "0 0 * * 0 rkhunter -c --sk"; } | crontab -
 crontab -l | { cat; echo "0 0 * * 0 rpm -V initscripts >> /var/log/initscripts.log"; } | crontab -
 # Install a cron to check that MySQL is running at all times
 echo "[Adding MySQL status checking and restart to crontabs...]"
