@@ -1072,7 +1072,7 @@ def build_command_arguments(args, args_array):
 
 # Build the output for command line instructions
 def print_command_help_output():
-    argument_output += "\n"
+    argument_output = "\n"
     argument_output += "Deploy usage : VPS_deploy.py [-load | -open | -deploy | -remotedeploy | -purge | -update] [-p <password>] | -backup <password>| -migrate -if <current url> -of <destination url>\n"
     argument_output += "\n"
     argument_output += "To open/close the web-root for non-root read/write permissions: VPS_deploy [-opendev | -closedev]\n"

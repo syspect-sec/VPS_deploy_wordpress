@@ -133,8 +133,29 @@ echo "[Installing PHP...]"
 #
 # Install PHP 7.1 and necessary extensions
 #
-rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
-yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
+if [ -s payloads/php_version ]
+then
+  while read -r -a phpversion
+  do
+    if [ ${phpversion} = "7.2" ]; then
+      rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+      yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
+    elif [ ${phpversion} = "7.1" ]; then
+      rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
+      yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
+    elif [ ${phpversion} = "5.6" ]; then
+      rpm -Uvh http://vault.centos.org/7.0.1406/extras/x86_64/Packages/epel-release-7-5.noarch.rpm
+      yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+      yum --enablerepo=remi,remi-php56 -y install php php-common
+      yum --enablerepo=remi,remi-php56 -y install php-cli php-pdo php-mysql php-mysqlnd php-gd php-mcrypt php-xml php-simplexml php-zip
+    elif [ ${phpversion} = "5.5" ]; then
+      rpm -Uvh http://vault.centos.org/7.0.1406/extras/x86_64/Packages/epel-release-7-5.noarch.rpm
+      yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+      yum --enablerepo=remi,remi-php55 -y install php php-common
+      yum --enablerepo=remi,remi-php55 -y install php-cli php-pdo php-mysql php-mysqlnd php-gd php-mcrypt php-xml php-simplexml php-zip
+    fi
+  done < payloads/php_version
+fi
 echo "[PHP installed...]"
 # Install MySQL / MariaDB
 # NOTE: Check that differences between MySQL and MariaDB
