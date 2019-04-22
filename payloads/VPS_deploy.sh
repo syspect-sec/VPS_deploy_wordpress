@@ -594,18 +594,26 @@ do
   # Eliminate all comment lines
   if [[ ${finish[0]:0:1} != "#" && ! -z "${finish[0]}" ]]; then
     if [ ${finish[0]} = "poweroff" ] && [ ${finish[1]} = "1" ]; then
-      echo "[Powering off VPS server... image me!...]"
-      poweroff
+      poweroff = 1
     fi
     if [ ${finish[0]} = "reboot" ] && [ ${finish[1]} = "1" ]; then
-      echo "[Rebooting VPS server... see you soon!...]"
-      reboot
+      reboot = 1
     fi
     if [ ${finish[0]} = "close" ] && [ ${finish[1]} = "1" ]; then
       # Close the payload
-      echo "[Closing the payload...]"
-      python ./VPS_deploy.py -close -p $1
-      echo "[Payload closed...]"
+      close = 1
     fi
   fi
 done < payloads/finish
+# Use the variables to determine finish operations
+if $poweroff = 1; then
+  echo "[Powering off VPS server... image me!...]"
+  poweroff
+elif $reboot = 1; then
+  echo "[Rebooting VPS server... see you soon!...]"
+  reboot
+elif $close = 1; then
+  echo "[Closing the payload...]"
+  python ./VPS_deploy.py -close -p $1
+  echo "[Payload closed...]"
+fi
