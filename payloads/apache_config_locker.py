@@ -5,6 +5,7 @@
 # and then restart apache and finally re-encrypt the config file.  The purpose is
 # to allow a server to maintain important passwords and API keys out of cleartext.
 # The Apache config file should therefore load a list of passwords into environment.
+
 ## Import Modules ##
 import os
 import sys
@@ -14,6 +15,7 @@ import hashlib
 from Crypto.Cipher import AES
 import smtplib
 import subprocess
+
 # Print the ascii header
 def print_ascii_header():
  print """
@@ -25,6 +27,7 @@ def print_ascii_header():
 |  |  |  |  |  |  \     |  |  |     |    \     |     |  |  |  |   |  ||     |    |     |     \     |  .  |     |  .  \\
 |__|__|__|  |__|__|\____|__|__|_____|     \____|\___/|__|__|__|  |____|___,_|    |_____|\___/ \____|__|\_|_____|__|\_|
 """
+
 ## Import data from file_list
 def decrypt_config(args_array):
 	## Include logger in the main function
@@ -90,6 +93,7 @@ def decrypt_config(args_array):
 		logger.error('Failed to decrypt the contents of the config file: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		# Return failed message
 		return False
+
 ## Parses the command argument sys.arg into command set, also encrypt password for use
 def build_command_arguments(argument_array, args_array):
 	## Include logger in the main function
@@ -121,9 +125,15 @@ def build_command_arguments(argument_array, args_array):
 			key = hashlib.sha256(raw_password).digest()
 			# Append the key back onto the end of the command line arguement array
 			command_arg.update({"key" : key})
-		# If there is no password argument, then the command line is failed
-		else:
-			return False
+		# If there is no password argument, then request password
+        elif "-p" not in argument_array:
+            # Request the user to put the password into command line
+            password_input = raw_input("Password please... >")
+            # Encrypt the raw_password into the form used for encryption
+            key = hashlib.sha256(password_input).digest()
+            # Append the key back onto the end of the command line arguement array
+            command_args.update({"key" : key})
+
 		# For loop to modify elements and strip "-"
 		for item in argument_array:
 			# Check that the argument is allowed
@@ -148,6 +158,7 @@ def build_command_arguments(argument_array, args_array):
 		# Log error with creating filepath
 		logger.error('Failed to build command arguments: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
+
 # Iteration of bytes of each file
 def hash_bytestr_iter(bytesiter, hasher, ashexstr=False):
     for block in bytesiter:
@@ -159,6 +170,7 @@ def file_as_blockiter(afile, blocksize=65536):
         while len(block) > 0:
             yield block
             block = afile.read(blocksize)
+
 # Encrypt the configuration file
 def encrypt_config(args_array):
 	## Include logger in the main function
@@ -212,6 +224,7 @@ def encrypt_config(args_array):
 		# Log error with creating checksum map
 		logger.error('Error writing encrypted config to file: ' + str(e) + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
+
 # Remove the config file
 def remove_config(args_array):
 	## Include logger in the main function
@@ -255,6 +268,7 @@ def remove_config(args_array):
 		# Log error with creating checksum map
 		logger.error('Error removing unencrypted config file: ' + str(e) + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
+
 # Confirm encrypted config file exists and can be decrypted using key
 def confirm_config(key, encrypted_path_and_filename):
 	## Include logger in the main function
@@ -296,6 +310,7 @@ def confirm_config(key, encrypted_path_and_filename):
 		# Log error with creating checksum map
 		logger.error('Error checking validity of encrypted config file: ' + str(e) + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
 		return False
+
 # Build the output for command line instructions
 def build_argument_output():
 	argument_output = "Usage : apache_config_locker.py [-p <password>] [-open | close | -start | -restart]\n"
@@ -306,6 +321,7 @@ def build_argument_output():
 	argument_output += "-restart : stop apache, decrypt config file, restart using decrypted config file, and then re-encrypt the config file\n"
 	argument_output += "-p <password> : enter the password required to decrypt the data payload\n"
 	print argument_output
+
 # Setup logging
 def setup_logger(args_array):
     logger = logging.getLogger(args_array['app_name'])
@@ -313,6 +329,7 @@ def setup_logger(args_array):
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     log_handler.setFormatter(formatter)
     logger.addHandler(log_handler)
+
 ## Main Function Starts Here ##
 if __name__ == '__main__':
 	# Set the current working directory
