@@ -487,6 +487,17 @@ def remove_payload(args_array):
     	logger.error('Failed to remove payload files: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
     	return False
 
+
+# Perform decryption
+def perform_decryption(key, data):
+
+    # Decrypt the file from encrypted format
+    IV = 16 * '\x00'
+    mode = AES.MODE_CBC
+    decryptor = AES.new(key, mode, IV=IV)
+    # Return the decrypted data
+    return decryptor.decrypt(data)
+
 # Validate the password is correct for the payload
 def validate_password(args_array):
 
@@ -497,8 +508,7 @@ def validate_password(args_array):
     with zipfile.ZipFile(args_array['compressed_payload_filename'] + ".zip", 'r') as z:
         # Extract the contents of the password file
         password_check_contents = z.read(args_array['password_check_filename'])
-        
-
+        password_check_contents = perform_decryption(args_array['command_args']['key'], password_check_contents)
 
 # Get script out of payload
 def open_payload(args_array):
@@ -509,7 +519,14 @@ def open_payload(args_array):
     try:
 
         # Validate the password is correct
-        if(validate_password(args_array)):
+        # If the password is not correct
+        if(validate_password(args_array) == False):
+            # Print message to stdout
+            print ("your password is incorrect...")
+            exit()
+
+        # If the password is correct
+        else:
 
             # Print to stdout
             print ("[Opening payload...]")
@@ -517,8 +534,6 @@ def open_payload(args_array):
 
             # Unzip the main payload located in required_files directory
             zip_file = zipfile.ZipFile(args_array['compressed_payload_filename'] + ".zip", 'r')
-            # Check that the password is correct
-            #zip_file.extract(, path=None, pwd=None)
 
             # Check and create the payloads directory
             if not os.path.exists(args_array['payload_dirpath']):
@@ -531,7 +546,9 @@ def open_payload(args_array):
             # Use the main args_array passphrase to decrypt each file
             file_list = os.listdir(args_array['payload_dirpath'])
             for enc_file in file_list:
+                # Create the directory path for the encrypted payload file
                 enc_file = args_array['payload_dirpath'] + enc_file
+                # Create a filepath string for output of confirmation message
                 enc_file_output = enc_file.split("/")[-3] + "/" + enc_file.split("/")[-2] + "/" + enc_file.split("/")[-1]
 
                 # Read encrypted contents into file
@@ -539,17 +556,8 @@ def open_payload(args_array):
                     payload_content = payload_in_file.read()
 
                 # Decrypt the file from encrypted format
-        		IV = 16 * '\x00'
-                mode = AES.MODE_CBC
-                decryptor = AES.new(args_array['command_args']['key'], mode, IV=IV)
-                payload_content = decryptor.decrypt(payload_content)
+                payload_content = perform_decryption(args_array['command_args']['key'], payload_content)
 
-                # Check that the first line for confirmation of password
-                # If the password confirmation is not correct, then return false
-                if payload_content[0] != "*":
-                    print ("your password is incorrect...")
-                    return False
-                else:
                     # Make an array to put passphrasess into
                     payload_content_array = payload_content.splitlines()
                     payload_content_cleaned = []
@@ -628,8 +636,6 @@ def create_payload(args_array):
                 file_array = plaintext_in_file.readlines()
 
             # Create a string to write to file
-            # Add the character to check password
-            data_string = "*\n"
             for item in file_array:
                 data_string += item + "\n"
             data_string += "\n"
