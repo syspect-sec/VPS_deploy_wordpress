@@ -487,49 +487,87 @@ def remove_payload(args_array):
     	logger.error('Failed to remove payload files: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
     	return False
 
+# Perform decryption
+def perform_decryption(key, data):
+
+    # Decrypt the file from encrypted format
+    IV = 16 * '\x00'
+    mode = AES.MODE_CBC
+    decryptor = AES.new(key, mode, IV=IV)
+    # Return the decrypted data
+    return decryptor.decrypt(data)
+
+# Validate the password is correct for the payload
+def validate_password(args_array):
+
+    # Include logger in the mainn function
+    logger = logging.getLogger(args_array['app_name'])
+
+    # Check that the password file is present in payload
+    with zipfile.ZipFile(args_array['compressed_payload_filename'] + ".zip", 'r') as z:
+        if args_array["password_check_filename"] in z.namelist():
+            # Extract password check single file to application root
+            z.extract(args_array["password_check_filename"], path=args_array['cwd'])
+        else:
+            # Print message to stdout and log
+            print "[Cannot find the password check file in compressed payload...]"
+            logger.error('Cannot find the password check file in compressed payload')
+            return False
+    # Open the passcheck file and check for decrypted validity
+    with open(args_array["password_check_filename"]) as passcheck_file:
+        passcheck_content = passcheck_file.read()
+        passcheck_content = perform_decryption(args_array['command_args']['key'], passcheck_content)
+        # Remove the extracted file from the payload
+        os.remove(args_array["payload_ready_filename"])
+        # Check password and exit or return True
+        if passcheck_content[0] == "^":
+            print "[Validated supplied password...]"
+            return True
+        else:
+            print "[Supplied password is incorrect...]"
+            exit()
+
 # Get script out of payload
 def open_payload(args_array):
 
-    ## Include logger in the main function
+    # Include logger
     logger = logging.getLogger(args_array['app_name'])
 
-    print ("[Opening payload...]")
-    logger.info("[Opening payload...]")
-
     try:
+        # Validate the password is correct
+        # If the password is not correct
+        if validate_password(args_array):
 
-        # Unzip the main payload located in required_files directory
-        zip_file = zipfile.ZipFile(args_array['compressed_payload_filename'] + ".zip", 'r')
-        # Check and create the payloads directory
-        if not os.path.exists(args_array['payload_dirpath']):
-            os.mkdir(args_array['payload_dirpath'])
-        # Extract all into the payloads directory
-        zip_file.extractall(args_array['payload_dirpath'])
-        zip_file.close()
-        os.remove(args_array["compressed_payload_filename"] + ".zip")
+            # Print to stdout
+            print ("[Opening payload...]")
+            logger.info("[Opening payload...]")
 
-        # Use the main args_array passphrase to decrypt each file
-        file_list = os.listdir(args_array['payload_dirpath'])
-        for enc_file in file_list:
-            enc_file = args_array['payload_dirpath'] + enc_file
-            enc_file_output = enc_file.split("/")[-3] + "/" + enc_file.split("/")[-2] + "/" + enc_file.split("/")[-1]
+            # Unzip the main payload located in required_files directory
+            zip_file = zipfile.ZipFile(args_array['compressed_payload_filename'] + ".zip", 'r')
 
-            # Read encrypted contents into file
-            with open(enc_file, "r") as payload_in_file:
-                payload_content = payload_in_file.read()
+            # Check and create the payloads directory
+            if not os.path.exists(args_array['payload_dirpath']):
+                os.mkdir(args_array['payload_dirpath'])
+            # Extract all into the payloads directory
+            zip_file.extractall(args_array['payload_dirpath'])
+            zip_file.close()
+            os.remove(args_array["compressed_payload_filename"] + ".zip")
 
-            # Decrypt the file from encrypted format
-    		IV = 16 * '\x00'
-            mode = AES.MODE_CBC
-            decryptor = AES.new(args_array['command_args']['key'], mode, IV=IV)
-            payload_content = decryptor.decrypt(payload_content)
+            # Use the main args_array passphrase to decrypt each file
+            file_list = os.listdir(args_array['payload_dirpath'])
+            for enc_file in file_list:
+                # Create the directory path for the encrypted payload file
+                enc_file = args_array['payload_dirpath'] + enc_file
+                # Create a filepath string for output of confirmation message
+                enc_file_output = enc_file.split("/")[-3] + "/" + enc_file.split("/")[-2] + "/" + enc_file.split("/")[-1]
 
-            # Check that the first line for confirmation of password
-            # If the password confirmation is not correct, then return false
-            if payload_content[0] != "*":
-                print ("your password is incorrect...")
-                return False
-            else:
+                # Read encrypted contents into file
+                with open(enc_file, "r") as payload_in_file:
+                    payload_content = payload_in_file.read()
+
+                # Decrypt the file from encrypted format
+                payload_content = perform_decryption(args_array['command_args']['key'], payload_content)
+
                 # Make an array to put passphrasess into
                 payload_content_array = payload_content.splitlines()
                 payload_content_cleaned = []
@@ -537,7 +575,7 @@ def open_payload(args_array):
                 # You may also want to remove whitespace characters like `\n` at the end of each line
                 for line in payload_content_array:
                     # Ignore characters used to check password and pad the encryption
-                    if line.strip() != "*" and line.strip() != len(line.strip()) * "@":
+                    if line.strip() != len(line.strip()) * "@":
                         # Append the line to array
                         payload_content_cleaned.append(line)
                 # Write the payload content into original random_passwords file
@@ -549,12 +587,12 @@ def open_payload(args_array):
                 print ("- Payload prepared: " + enc_file_output)
                 logger.info("- Payload prepared: " + enc_file_output)
 
-        # Chmod the script files to be executable
-        for ex_file in args_array['executable_files_array']:
-            os.chmod(ex_file, 0700)
+            # Chmod the script files to be executable
+            for ex_file in args_array['executable_files_array']:
+                os.chmod(ex_file, 0700)
 
-        print ("[Payload opened...]")
-        logger.info("[Payload opened...]")
+            print ("[Payload opened...]")
+            logger.info("[Payload opened...]")
 
     except Exception as e:
         print (traceback)
@@ -609,7 +647,7 @@ def create_payload(args_array):
 
             # Create a string to write to file
             # Add the character to check password
-            data_string = "*\n"
+            data_string = ""
             for item in file_array:
                 data_string += item + "\n"
             data_string += "\n"
@@ -1187,8 +1225,7 @@ if __name__ == '__main__':
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/VPS_deploy.sh",
-                cwd + "/payloads/userdata",
-                cwd + "/payloads/VPS_deploy.sh"
+                cwd + "/payloads/userdata"
             ],
             # Files that have GitHub data to be replaced
             "github_data" : [
