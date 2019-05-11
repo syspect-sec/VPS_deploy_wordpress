@@ -1,8 +1,9 @@
-# Testing branch workflow
 # TODO: Documentation:
 -add steps of Digital Ocean DNS pointing you your correct VPS IP
 
+
 # TODO: Improve main script
+-setup the database backup config schedule time to be settable from serverdata
 -modify the database file after cloning from github
 -modify the entire installation file after cloning from github
 -change database credentials into the wp-config.php file
@@ -34,4 +35,3 @@ warning: /var/tmp/rpm-tmp.Q6PAuU: Header V4 RSA/SHA1 Signature, key ID 62e74ca5:
 warning: /var/cache/yum/x86_64/7/webtatic/packages/mod_php71w-7.1.27-1.w7.x86_64.rpm: Header V4 RSA/SHA1 Signature, key ID 62e74ca5: NOKEY
 
 Warning: RPMDB altered outside of yum.
-

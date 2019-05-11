@@ -288,8 +288,6 @@ then
         # Clone the repo for the site to be installed
         echo "[Cloning repository into web-root directory...]"
         git clone git@github.com:${githubuser[1]}/${githubuser[0]}.git /var/www/html/${githubuser[0]}
-        # Create a `live` branch in the repo
-        (cd /var/www/html/${githubuser[0]} && git checkout -b live)
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"
@@ -485,14 +483,15 @@ crontab payloads/crons
 #echo "[Adding rkhunter to crontabs...]"
 #crontab -l | { cat; echo "0 0 * * 0 rkhunter -c --sk"; } | crontab -
 # TODO: what does rpm -V initscripts >> /var/log/initscripts.log do???
-echo "[Adding rkhunter to crontabs...]"
+echo "[Adding rpm initscripts crontabs...]"
 crontab -l | { cat; echo "0 0 * * 0 rpm -V initscripts >> /var/log/initscripts.log"; } | crontab -
 # Install a cron to check that MySQL is running at all times
 echo "[Adding MySQL status checking and restart to crontabs...]"
 crontab -l | { cat; echo "* * * * * service mariadb status || service mariadb start"; } | crontab -
 # Install GitHub push and scp database backup to remote server
 echo "[Adding GitHub and remote database backup to crontabs...]"
-crontab -l | { cat; echo "0 5 * * 1 python ./root/VPS_deploy.py -backup -p $1"; } | crontab -
+crontab -l | { cat; echo "1 0 * * * python ./root/VPS_deploy.py -githubbackup -p $1"; } | crontab -
+crontab -l | { cat; echo "1 0 * * 1 python ./root/VPS_deploy.py -databasebackup -p $1"; } | crontab -
 echo "[Finished adding crontabs to schedule...]"
 #
 # Prepare location for database backups

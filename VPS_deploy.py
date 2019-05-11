@@ -1185,13 +1185,13 @@ if __name__ == '__main__':
         # Default MySQL backup password in the vanilla version of the package
         "default_mysql_backup_password" : "<default_mysql_backup_password>",
         # Allowed command line args
-		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-close", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-backup"],
+		"allowed_args_array" : ["-load", "-remotedeploy", "-deploy", "-open", "-close", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-githubbackup", "-databasebackup"],
         # Allowed PHP version strings in the serverdata file
 		"allowed_PHP_versions" : ["7.2", "7.1", "5.6", "5.5"],
         # Allowed database version strings in the serverdata file
 		"allowed_db_versions" : ["mariadb", "mysql", "postgres"],
         # Command args that are not allowed with purge
-        'not_with_purge' : ["load", "open", "close", "opendev", "closedev", "update", "migrate", "backup"],
+        'not_with_purge' : ["load", "open", "close", "opendev", "closedev", "update", "migrate", "githubbackup", "databasebackup"],
         # Payload and required_files directory path
         "payload_dirpath" : payload_dirpath,
         # File to check if payload locked or not
@@ -1213,7 +1213,9 @@ if __name__ == '__main__':
         # Filename of script to update GitHub repository
         "VPS_update_git_filename" : "payloads/VPS_update_git.sh",
         # Filename of script to update GitHub repository
-        "VPS_backup_filename" : "payloads/VPS_remote_backup.sh",
+        "VPS_github_filename" : "payloads/VPS_github_backup.sh",
+        # Filename of script to backup database
+        "VPS_database_filename" : "payloads/VPS_database_backup.sh",
         # Filename of script to open the permissions for dev
         "VPS_opendev_filename" : "VPS_open.sh",
         # Filename of script to close permissions
@@ -1434,16 +1436,35 @@ if __name__ == '__main__':
                 print ("[Could not locate the script to close web-directory permissions...]")
 
         # If the command opendev then run script to change permissions
-        elif args_array['command_args']['command'] == "backup":
+        elif args_array['command_args']['command'] == "githubbackup":
+
             # Open the payload again
             if is_payload_open(args_array) == False:
                 print ("[Opening payload...]")
                 # Open the payload
                 open_payload(args_array)
 
-            # Check for the location of the script and run it
-            if os.path.isfile("payloads/" + args_array['VPS_backup_filename']):
-                subprocess.call("payloads/" + args_array['VPS_backup_filename'], shell=True)
+            # Check for the existance of the GitHub backup script and run it
+            if os.path.isfile("payloads/" + args_array['VPS_github_backup']):
+                subprocess.call("payloads/" + args_array['VPS_github_backup'] + " >> VPS_deploy.log", shell=True)
+
+            print ("[Closing payload...]")
+            # Close the payload
+            close_payload(args_array)
+
+
+        # If the command opendev then run script to change permissions
+        elif args_array['command_args']['command'] == "databasebackup":
+
+            # Open the payload again
+            if is_payload_open(args_array) == False:
+                print ("[Opening payload...]")
+                # Open the payload
+                open_payload(args_array)
+
+            # Check for the existance of the databse backup script and run it
+            if os.path.isfile("payloads/" + args_array['VPS_database_backup']):
+                subprocess.call("payloads/" + args_array['VPS_database_backup'] + " >> VPS_deploy.log", shell=True)
 
             print ("[Closing payload...]")
             # Close the payload
