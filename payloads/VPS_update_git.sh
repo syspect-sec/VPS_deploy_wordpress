@@ -41,11 +41,6 @@ then
         echo "[Fetching GitHub repository...]"
         cd /var/www/html/${githubuser[0]}
         #
-        # Push the live site to the GitHub repository 'live' branch
-        #
-        git fetch . master:live
-        git push origin live
-        #
         # Pull the changes from the GitHub repository 'master' branch
         #
         git fetch --all

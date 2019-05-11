@@ -18,7 +18,7 @@ echo "[Adding identify files to root...]"
 mv /root/.ssh/ssh_identity_file /root/.ssh/config
 chmod 0400 /root/.ssh/config
 #
-# Push the newly created database backup to the backup server
+# Backup the database remotely
 #
 echo "[Starting to secure copy datbase backup to the server...]"
 if [ -s payloads/id_rsa_backup ]
@@ -44,11 +44,12 @@ then
       if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
         # Create a full backup of the database
         echo "[Create a MySQL full database backup...]"
+        setdate=`date +%s`
         if [ -s payloads/mysql_userdata ]; then
           while read -r -a mysqlpass
           do
             if [ ${mysqlpass[0]} = "backup" ]; then
-              mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/backups/${githubuser[1]}/db_backup_\$(date +\%m_\%d_\%Y).sql.gz
+              mysqldump --single-transaction -u backup -p${mysqlpass[1]} --all-databases | gzip > /var/www/backups/${githubuser[1]}/db_backup_\${setdate}.sql.gz
             fi
           done < payloads/mysql_userdata
         fi
@@ -56,7 +57,7 @@ then
         echo "[Secure copy the database backup to the repository folder on the backup server...]"
         while read -r -a remoteserver
         do
-          scp /var/www/backups/${githubuser[1]}/db_backup_\$(date +\%m_\%d_\%Y).sql.gz ${remoteserver[0]}@${remoteserver[1]}:~${githubuser[1]}
+          scp /var/www/backups/${githubuser[1]}/db_backup_\${setdate}.sql.gz ${remoteserver[0]}@${remoteserver[1]}:~${githubuser[1]}
         done < payloads/remote_serverdata
       fi
     done < payloads/github_userdata
@@ -88,14 +89,17 @@ then
     do
       # Eliminate comments
       if [[ ${githubuser[0]:0:1} != "#" && ! -z "${githubuser[0]}" ]]; then
-        # Clone the repo for the site to be installed
-        echo "[Adding changes to GitHub repository...]"
+        #
+        # Push the live site to the GitHub repository 'live' branch
+        #
         cd /var/www/html/${githubuser[0]}
         git add -A
         echo "[Commiting changes to GitHub repository...]"
         git commit -m "Auto commit from server on \$(date +\%m_\%d_\%Y)"
+        echo "[Adding changes to GitHub repository...]"
+        git fetch . master:live
         echo "[Pushing commits to GitHub repository...]"
-        git push origin master
+        git push origin live
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"

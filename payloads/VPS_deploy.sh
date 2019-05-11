@@ -289,7 +289,7 @@ then
         echo "[Cloning repository into web-root directory...]"
         git clone git@github.com:${githubuser[1]}/${githubuser[0]}.git /var/www/html/${githubuser[0]}
         # Create a `live` branch in the repo
-        (cd /var/www/html/${githubuser[0]} && git branch live)
+        (cd /var/www/html/${githubuser[0]} && git checkout -b live)
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"
@@ -459,8 +459,8 @@ echo "[rkhunter added and updated...]"
 # Run rkhunter to get initial image of system settings
 echo "[Creating rkhuner stored file properties (rkhunter.dat)...]"
 rkhunter --propupd
+echo "[rkhunter stored files properties file created...]"
 # TODO: rkhunter -c -sk is not completing scan... thinks
-#echo "[rkhunter stored files properties file created...]"
 #rkhunter -c --sk
 #echo "[rkhunter has completed first scan of system...]"
 # Continue to install non critical softare
@@ -482,8 +482,10 @@ echo "[Finished installing required python packages...]"
 echo "[Intializing crontab and adding crontabs from payload...]"
 crontab payloads/crons
 # Install cron for rkhunter
-echo "[Adding rkhunter to crontabs...]"
+#echo "[Adding rkhunter to crontabs...]"
 #crontab -l | { cat; echo "0 0 * * 0 rkhunter -c --sk"; } | crontab -
+# TODO: what does rpm -V initscripts >> /var/log/initscripts.log do???
+echo "[Adding rkhunter to crontabs...]"
 crontab -l | { cat; echo "0 0 * * 0 rpm -V initscripts >> /var/log/initscripts.log"; } | crontab -
 # Install a cron to check that MySQL is running at all times
 echo "[Adding MySQL status checking and restart to crontabs...]"
