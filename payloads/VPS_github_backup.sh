@@ -47,11 +47,18 @@ then
         # Push the live site to the GitHub repository 'live' branch
         #
         cd /var/www/html/${githubuser[0]}
+        # Push the current site to the live branch
+        git fetch . master:live
+        # Switch to the live branch
+        git checkout live
+        # Add the changes to the live branch
         git add -A
         echo "[Commiting changes to GitHub repository...]"
         git commit -m "Auto commit from server on \$(date +\%m_\%d_\%Y)"
         echo "[Pushing commits to GitHub repository...]"
-        git push origin master
+        git push origin live
+        # Switch back to the master branch
+        git checkout master
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"

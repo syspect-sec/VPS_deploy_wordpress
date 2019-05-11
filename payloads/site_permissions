@@ -26,12 +26,8 @@
 #
 <se-dir-read> -R /var/www/html/<default_github_reponame>/
 #
-# Allow write to log directory
-#
-<se-dir-read-write> -R /var/www/html/<default_github_reponame>/extra_files/logs/
-#
 # Allow write all to directories
-#
+# TODO: limit write access to less directories
 <se-dir-read-write> -R /var/www/html/<default_github_reponame>/
 #
 # Allow execute to the scripts for initializing app

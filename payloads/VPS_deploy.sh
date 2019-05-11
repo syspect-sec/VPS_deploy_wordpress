@@ -128,11 +128,10 @@ echo "[Added epel repository...]"
 echo "[Installing Apache...]"
 yum install -y httpd
 echo "[Apache installed...]"
-# Install PHP
-echo "[Installing PHP...]"
 #
 # Install PHP 7.1 and necessary extensions
 #
+echo "[Installing PHP...]"
 if [ -s payloads/php_version ]
 then
   while read -r -a phpversion
@@ -157,30 +156,45 @@ then
   done < payloads/php_version
 fi
 echo "[PHP installed...]"
-# Install MySQL / MariaDB
-# NOTE: Check that differences between MySQL and MariaDB
-# Method 1: MySQL / MariaDB from default repository
-echo "[Installing MySQL/MariaDB...]"
-yum install -y mariadb-server
-# Replace MySQL/MariaDB my.conf file with payload/my.cnf
-echo "[Replacing MySQL/MariaDB configuration file...]"
-/bin/cp payloads/my.cnf /etc/my.cnf
-# Start MySQL/MariaDB and add to boot services
-echo "[Starting MySQL/MariaDB...]"
-systemctl start mariadb
-systemctl enable mariadb
-systemctl status mariadb
-echo "[MySQL/MariaDB installed, started and added to system services...]"
-# Method 2: Installed from newest packages available online
-#wget -N https://dev.mysql.com/get/mysql-community-server-8.0.12-1.el7.x86_64.rpm
-#rpm -ivh mysql-community-server-8.0.12-1.el7.x86_64.rpm
-#yum update
-#yum localinstall -y mysql-community-release-el7-5.noarch.rpm
-#systemctl start mysqld
-#systemctl enable mysqld
-#echo "[MySQL installed from rpm and started...]"
-# Perform tasks performed by mysql_secure_installation
-# If there is anything in the mysql_userdata file then add mysql root password and backup user
+#
+# Install Database Application
+#
+echo "[Installing Database Application...]"
+if [ -s payloads/db_version ]
+then
+  while read -r -a dbversion
+  do
+    if [ ${dbversion} = "mariadb" ]; then
+      # Install MariaDB from default repository
+      echo "[Installing MariaDB...]"
+      yum install -y mariadb-server
+      # Replace MySQL/MariaDB my.conf file with payload/my.cnf
+      echo "[Replacing MariaDB configuration file...]"
+      /bin/cp payloads/my.cnf /etc/my.cnf
+      # Start MySQL/MariaDB and add to boot services
+      echo "[Starting MariaDB...]"
+      systemctl start mariadb
+      systemctl enable mariadb
+      systemctl status mariadb
+      echo "[MariaDB installed, started and added to system services...]"
+    elif [ ${dbversion} = "mysql" ]; then
+      # Install MySQL from default repository
+      echo "[Installing MySQL...]"
+      wget -N https://dev.mysql.com/get/mysql-community-server-8.0.12-1.el7.x86_64.rpm
+      rpm -ivh mysql-community-server-8.0.12-1.el7.x86_64.rpm
+      yum update
+      yum localinstall -y mysql-community-release-el7-5.noarch.rpm
+      systemctl start mysqld
+      systemctl enable mysqld
+      echo "[MySQL installed from rpm and started...]"
+      # Perform tasks performed by mysql_secure_installation
+      # If there is anything in the mysql_userdata file then add mysql root password and backup user
+    elif [ ${dbversion} = "postgres" ]; then
+
+    fi
+  done < payloads/db_version
+fi
+echo "[Database Application installed...]"
 #
 # Modify Configuration of LAMP Web-stack
 #
@@ -288,6 +302,8 @@ then
         # Clone the repo for the site to be installed
         echo "[Cloning repository into web-root directory...]"
         git clone git@github.com:${githubuser[1]}/${githubuser[0]}.git /var/www/html/${githubuser[0]}
+        # Create a `live` branch in the repo
+        (cd /var/www/html/${githubuser[0]} && git branch live)
         # Remove the ssh-agent deamon
         eval `ssh-agent -k`
         echo "[ssh-agent process killed...]"
