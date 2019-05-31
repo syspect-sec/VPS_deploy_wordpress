@@ -51,21 +51,27 @@ Here are brief overviews of all files required in VPS Deploy.  Configuration fil
 
 *Configuration Files*
 
-**serverdata** ~ specify the IP address of the server and the domain name that the server will have.  DNS name-server records must be set to point to that IP address in the configuration where you bought your domain name.
+**serverdata** ~ specify the IP address, domain-name, GitHub username and repository name,
+root password, non-root username and password, and other config settings used configure the payload.  DNS name-server records must be set to point to that IP address in the configuration where you bought your domain name.
 
 **payloads/additional_scripts** ~ any additional scripts that are contained in your GitHub repository or included in the payloads directory that you want to be run during the server setup.
 
-**payloads/config** ~
+**payloads/config** ~ an ssh config file (not being used now)
 
 **payloads/crons** ~ any crons that you want added to the root user on the server.
 
-**payloads/finish** ~ set what will VPS Deploy do after it's finished.
+**payloads/finish** ~ set what will VPS Deploy will do after it's finished. Options are
+shutdown server, reboot server, and close payload
 
 **payloads/github_userdata** ~ username and repository name for the GitHub repository that will be cloned into the web-root directory of the server.
 
 **payloads/httpd.conf** ~ config file for Apache that will be copied into place on the server to replace the default one.
 
 **payloads/jail.local** ~ Fail2Ban settings that will be copied into place on the server to replace the default one.
+
+**payloads/http-get-dos.conf** ~ Fail2Ban configuration file to stop DOS using GET requests that will be copied into place on the server.
+
+**payloads/http-post-dos.conf** ~ Fail2Ban configuration file to stop DOS using POST requests that will be copied into place on the server.
 
 **payloads/my.cnf** ~ MySQL/MariaDB config file that will be copied into place on the server to replace the default one.
 

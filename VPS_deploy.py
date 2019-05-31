@@ -96,6 +96,12 @@ def get_server_data_from_file(cwd):
             if line.split()[0] == "MySQLBackupPassword":
                 server_data.update({'mysql_backup_password' : line.split()[1].strip()})
                 print ("MySQL backup password: " + server_data['mysql_backup_password'])
+            # Collect the MySQL install script from config file
+            if line.split()[0] == "MySQLScript":
+                if "mysql_scripts" not in server_data:
+                    server_data['mysql_scripts'] = []
+                server_data['mysql_scripts'].append(line.split()[1].strip())
+                print ("MySQL script: " + line.split()[1].strip())
             # Collect the WordPress uploads dir from config file
             if line.split()[0] == "UploadsDirLocalPath":
                 server_data.update({'uploads_dirpath' : line.split()[1].strip()})
@@ -133,6 +139,10 @@ def get_server_data_from_file(cwd):
     if "remote_backup_IP" not in server_data:
         server_data.update({'remote_backup_username' : False})
         server_data.update({'remote_backup_IP' : False})
+
+    # Set a false flag for MySQL scripts if none exist
+    if "mysql_scripts" not in server_data:
+        server_data.update({'mysql_scripts' : False})
 
     # Set WordPress uploads dirpath variable to false if not included in serverdata file
     if "uploads_dirpath" not in server_data:
@@ -205,6 +215,8 @@ def prepare_args_array(args_array):
     args_array.update({"mysql_backup_password" : server_data['mysql_backup_password']})
 
     # Update the optional serverdata settings
+    # MySQL scripts to be run during installation
+    if "mysql_scripts" in server_data: args_array.update({"mysql_scripts" : server_data['mysql_scripts']})
     # WordPress uploads directory to move
     if "uploads_dirpath" in server_data: args_array.update({"uploads_dirpath" : server_data['uploads_dirpath']})
     # Remote backup server username
@@ -518,7 +530,7 @@ def validate_password(args_array):
         passcheck_content = passcheck_file.read()
         passcheck_content = perform_decryption(args_array['command_args']['key'], passcheck_content)
         # Remove the extracted file from the payload
-        os.remove(args_array["payload_ready_filename"])
+        os.remove(args_array["password_check_filename"])
         # Check password and exit or return True
         if passcheck_content[0] == "^":
             print "[Validated supplied password...]"
@@ -803,7 +815,6 @@ def initialize_payload(args_array):
             print ("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
             logger.info("- Initializing the payload remote server IP from " + args_array['current_remote_backup_IP'] + " to " + args_array['remote_backup_IP'])
 
-
     # Update the PHP Version and MySQL version files in the payload
     if args_array['PHP_version'] != False:
         # Open the file and replace the existing values
@@ -838,6 +849,9 @@ def initialize_payload(args_array):
     # Store new config settings in .init_as
     store_new_configuration_settings(args_array)
 
+    # Set the MySQL scripts to be run during deployment
+    update_mysql_scripts(args_array)
+
     # Print message to stdout
     print ("[ " + str(replacement_count) + " total replacements were found...]")
 
@@ -864,6 +878,49 @@ def store_new_configuration_settings(args_array):
             init_as.write("UploadsDirLocalPath " + args_array['uploads_dirpath'] + "\n")
 
         print ("[Finished storing new configuration settings...]")
+
+# Update the mysql scripts file
+def update_mysql_scripts(args_array):
+
+    # Include logger in the main function
+    logger = logging.getLogger(args_array['app_name'])
+
+    # Create an array to store temp mysql scripts
+    temp_mysql_script = []
+
+    # Open the mysql_scripts file and append any update
+    with open(args_array['payload_mysql_scripts_filename'], "r") as mysql_scripts:
+        mysql_scripts_content = mysql_scripts.readlines()
+    # If there are mysql scripts specified in the config file
+    if args_array['mysql_scripts'] != False:
+        # Loop through all scripts in serverdata
+        for script in args_array['mysql_scripts']:
+            # Check if line is in the config config file
+            if script not in mysql_scripts_content:
+                # Append to the array to be written to file
+                mysql_scripts_content.append(script)
+        # Loop through the array to be written to mysql_scripts file
+        for line in mysql_scripts_content:
+            # Ignore comment lines
+            if line.strip()[0] == "#":
+                temp_mysql_script.append(line)
+            else:
+                # If the line is not in the severdata config
+                if line in args_array['mysql_scripts']:
+                    temp_mysql_script.append(line)
+    else:
+        # Loop through the array to be written to mysql_scripts file
+        for line in mysql_scripts_content:
+            # Ignore comment lines
+            if line.strip()[0] == "#":
+                temp_mysql_script.append(line)
+
+    # Write the temp array to the file
+    with open(args_array['payload_mysql_scripts_filename'], "w") as mysql_scripts:
+        for line in temp_mysql_script:
+            mysql_scripts.write(line)
+
+    print ("[Finished updating mysql_scripts with config settings...]")
 
 # Recieves a filename and looks for infile and changes to outfile
 def initialize_single_file(key, args_array, filename):
@@ -1006,8 +1063,14 @@ def build_command_arguments(args, args_array):
         # Pop off the first element of array because it's the application filename
         args.pop(0)
 
-        # First check if opendev, closedev arg issued
-        if "-closedev" in args or "-opendev" in args:
+        # First check if help command requested
+        if "-h" in args:
+            # Return the command args array
+            command_args = False
+            return command_args
+
+        # Second check if opendev, closedev arg issued
+        elif "-closedev" in args or "-opendev" in args:
                 # Return the command args array
                 command_args['command'] = args[0].replace('-', '')
                 return command_args
@@ -1195,11 +1258,13 @@ if __name__ == '__main__':
         # Payload and required_files directory path
         "payload_dirpath" : payload_dirpath,
         # File to check if payload locked or not
-        "payload_ready_filename" : ".passcheck",
+        "password_check_filename" : ".passcheck",
         # File to check if payload is still default or has been init
         "payload_init_filename" : payload_dirpath + ".init_as",
         # File containing the remote backup IP address
         "payload_remote_serverdata_filename" : payload_dirpath + "remote_serverdata",
+        # File containing the MySQL scripts
+        "payload_mysql_scripts_filename" : payload_dirpath + "mysql_scripts",
         # File containing the PHP version to be installed
         "PHP_version_filename" : payload_dirpath + "php_version",
         # File containing the database version to be installed
@@ -1243,7 +1308,8 @@ if __name__ == '__main__':
             "remote_serverdata" : [
                 cwd + "/payloads/remote_serverdata",
                 cwd + "/payloads/ssh_identity_file",
-                cwd + "/payloads/VPS_remote_backup.sh"
+                cwd + "/payloads/VPS_database_backup.sh",
+                cwd + "/payloads/VPS_github_backup.sh"
             ],
             # Files that have MySQL data to be replaced
             "mysql_data" : [
@@ -1263,7 +1329,8 @@ if __name__ == '__main__':
             "payloads/VPS_apachectl.sh",
             "payloads/apache_config_locker.py",
             "payloads/VPS_update_git.sh",
-            "payloads/VPS_remote_backup.sh"
+            "payloads/VPS_github_backup.sh",
+            "payloads/VPS_database_backup.sh"
         ],
         # Array of all possible files in required_files
         "payload_filename_array" : {
@@ -1451,7 +1518,6 @@ if __name__ == '__main__':
             print ("[Closing payload...]")
             # Close the payload
             close_payload(args_array)
-
 
         # If the command opendev then run script to change permissions
         elif args_array['command_args']['command'] == "databasebackup":

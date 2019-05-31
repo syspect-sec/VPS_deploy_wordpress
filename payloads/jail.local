@@ -5,3 +5,75 @@ bantime = 3600
 banaction = iptables-multiport
 [sshd]
 enabled = true
+
+# Simple attempt to block very basic DOS attacks over GET
+#    Tolerate ~3.3 GET/s in 30s (100 GET in less than 30s)
+[http-get-dos]
+enabled = true
+port = http,https
+filter = http-get-dos
+logpath   = /var/log/fail2ban.log
+maxRetry = 100
+findtime = 30
+bantime = 6000
+
+# Simple attempt to block very basic DOS attacks over POST
+#   Tolerate ~2 POST/s in 30s (60 POST in less than 30s)
+[http-post-dos]
+enabled = true
+port = http,https
+filter = http-post-dos
+logpath   = /var/log/fail2ban.log
+maxRetry = 60
+findtime = 29
+bantime = 6000
+
+# Multi Ban
+# 3 ban in 1 hour > Ban for 1 hour
+[multi-ban]
+
+enabled = true
+filter = ban
+logpath = /var/log/fail2ban.log
+maxretry = 3
+findtime = 3600
+banaction = iptables-multiport
+bantime = 86400
+
+# Multi Ban 2
+# 3 multi-ban in 4 hours > Ban for 24h
+[multi-ban2]
+
+enabled = true
+filter = multiban
+logpath = /var/log/fail2ban.log
+maxretry = 3
+findtime = 14400
+banaction = iptables-multiport
+bantime = 186400
+
+ignoreip = 208.101.84.47
+
+# Protect against DOS attack
+# 360 request in 2 min > Ban for 10 minutes
+[http-get-dos]
+
+enabled = true
+port = http,https
+filter = http-get-dos
+logpath = /var/log/fail2ban.log
+maxretry = 360
+findtime = 120
+action = iptables[name=HTTP, port=http, protocol=tcp]
+bantime = 600
+
+# Simple attempt to block very basic DOS attacks over POST
+# Tolerate ~20 POST/s in 20s (60 POST in less than 30s)
+[http-post-dos]
+enabled = true
+port = http,https
+filter = http-post-dos
+logpath   = /var/log/fail2ban.log
+maxRetry = 20
+findtime = 20
+bantime = 6000

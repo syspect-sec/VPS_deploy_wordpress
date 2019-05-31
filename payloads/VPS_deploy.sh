@@ -8,10 +8,16 @@
 # Author: Joseph Lee
 # Email: joseph@ripplesoftware.ca
 #
+# Install epel repository
+#
+echo "[Adding epel repository...]"
+yum install -y epel-release
+echo "[Added epel repository...]"
 #
 # Set the timezone and configure time
 #
 # Install the NTP date
+echo "[Configuring server time...]"
 yum install -y ntp
 yum install -y ntpdate
 # Check that ntpd is running
@@ -28,6 +34,7 @@ hwclock -w
 timedatectl set-ntp yes
 # Set the local time zone
 timedatectl set-local-rtc 0
+echo "[Server time configured...]"
 #
 # Enable persistant log journaling
 #
@@ -37,7 +44,8 @@ systemctl restart systemd-journald
 #
 # Creat Swap space and enable
 #
-sudo dd if=/dev/zero of=/swapfile count=1096 bs=1MiB
+echo "[Creating swap space...]"
+sudo dd if=/dev/zero of=/swapfile count=2096 bs=1MiB
 chmod 600 /swapfile
 mkswap /swapfile
 swapon /swapfile
@@ -45,6 +53,8 @@ echo "/swapfile swap swap defaults 0 0" >> /etc/fstab
 swapon --show
 swapon --summary
 free -h
+echo "[Swap space created...]"
+#
 # Install Firewalld
 #
 echo "[Installing firewalld...]"
@@ -59,10 +69,30 @@ echo "[firwalld installed, enabled, and added to systemctl services...]"
 echo "[Installing fail2ban...]"
 yum install -y fail2ban
 /bin/cp payloads/jail.local /etc/fail2ban/jail.local
+/bin/cp payloads/ban.conf /etc/fail2ban/ban.conf
+/bin/cp payloads/multiban.conf /etc/fail2ban/filter.d/multiban.conf
+/bin/cp payloads/httpd-get-dos.conf /etc/fail2ban/filter.d/httpd-get-dos.conf
+/bin/cp payloads/httpd-post-dos.conf /etc/fail2ban/filter.d/httpd-post-dos.conf
 systemctl restart fail2ban
 systemctl enable fail2ban
 fail2ban-client status
 echo "[fail2ban installed, enabled, and added to systemctl services...]"
+#
+# Install Clamscan
+#
+echo "[Installing ClamAV...]"
+#yum install -y clamav clamav-update clamav-scanner-systemd clamav-server-systemd
+yum -y install clamav-server clamav-data clamav-update clamav-filesystem clamav clamav-scanner-systemd clamav-devel clamav-lib clamav-server-systemd
+sed -i -e "s/^Example/#Example/" /etc/freshclam.conf
+sed -i -e "s/^Example/#Example/" /etc/clamd.d/scan.conf
+# Configure SELinux to allow virus scanning
+setsebool -P antivirus_can_scan_system 1
+setsebool -P clamd_use_jit 1
+echo "[ClamAV installed enabled and added to systemctl services...]"
+echo "[Updating ClamAV signatures...]"
+freshclam
+clamd -V
+echo "[ClamAV Installed...]"
 #
 # User Account Creation
 #
@@ -117,10 +147,6 @@ done < payloads/userdata
 #echo "[Updating and upgrading OS...]"
 #yum -y update && upgrade
 #echo "[OS updated and upgraded...]"
-# Install epel repository
-echo "[Adding epel repository...]"
-yum install -y epel-release
-echo "[Added epel repository...]"
 #
 # Install LAMP Web-stack
 #
@@ -508,6 +534,10 @@ crontab -l | { cat; echo "* * * * * service mariadb status || service mariadb st
 echo "[Adding GitHub and remote database backup to crontabs...]"
 crontab -l | { cat; echo "1 0 * * * python ./root/VPS_deploy.py -githubbackup -p $1"; } | crontab -
 crontab -l | { cat; echo "1 0 * * 1 python ./root/VPS_deploy.py -databasebackup -p $1"; } | crontab -
+echo "[Adding a full scan of the WordPress Installation to crontabs...]"
+crontab -l | { cat; echo "0 1 * * 1 clamscan -r /var/www/html/${githubuser[1]}"; } | crontab -
+echo "[Update the ClamScan virus signatures ...]"
+crontab -l | { cat; echo "0 2 * * 2 freshclam"; } | crontab -
 echo "[Finished adding crontabs to schedule...]"
 #
 # Prepare location for database backups
