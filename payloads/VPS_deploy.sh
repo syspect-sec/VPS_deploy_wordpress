@@ -485,6 +485,7 @@ echo "[Starting Apache...]"
 service httpd start
 # Set Apache to start on server boot
 echo "[Addding Apache to system services...]"
+systemctl enable httpd
 systemctl enable httpd.service
 echo "[Apache started and added to system services...]"
 #
@@ -510,6 +511,8 @@ echo "[logrotate Installed...]"
 echo "[Installing nano...]"
 yum install -y nano
 echo "[nano Installed...]"
+echo "[Installing additional packages...]"
+yum install -y yum-plugin-protectbase.noarch
 echo "[Installing required python packages...]"
 yum install -y python-dateutil
 yum install -y MySQL-python
@@ -535,7 +538,7 @@ echo "[Adding GitHub and remote database backup to crontabs...]"
 crontab -l | { cat; echo "1 0 * * * python ./root/VPS_deploy.py -githubbackup -p $1"; } | crontab -
 crontab -l | { cat; echo "1 0 * * 1 python ./root/VPS_deploy.py -databasebackup -p $1"; } | crontab -
 echo "[Adding a full scan of the WordPress Installation to crontabs...]"
-crontab -l | { cat; echo "0 1 * * 1 clamscan -r /var/www/html/${githubuser[1]}"; } | crontab -
+crontab -l | { cat; echo "0 3 * * 2 clamscan -r -i /var/www/html/${githubuser[1]} -l /var/log/clamscan.log"; } | crontab -
 echo "[Update the ClamScan virus signatures ...]"
 crontab -l | { cat; echo "0 2 * * 2 freshclam"; } | crontab -
 echo "[Finished adding crontabs to schedule...]"
@@ -571,6 +574,9 @@ echo "[Root SSH directory removed...]"
 # Install required SSL packages
 echo "[Installing required packages for SSL...]"
 yum install -y mod_ssl python-certbot-apache
+# Install mod_evasive DDOS prevention
+echo "[Installing additional Apache security packages...]"
+yum install -y mod_evasive  mod_security
 # Restart Apache
 echo "[Restarting Apache...]"
 systemctl restart httpd
@@ -578,11 +584,13 @@ systemctl restart httpd
 systemctl status httpd
 # Move the payload and main script to the server, and run remotely
 # TODO: use tool to autocomplete the requried input such as email address, etc. "2" into the certbot command
-echo "[Registering a SSL certificate with Let's Encrypt...]"
-certbot --non-interactive --agree-tos --redirect --hsts --uir -m <your@emailaddress.com> --apache -d <default_site_URI> -d www.<default_site_URI>
 echo "[SSL certificate registered...]"
 /bin/cp payloads/ssl.conf /etc/httpd/conf.d/ssl.conf
-echo "[Moved SSL configuration file to Apache...]"
+/bin/cp payloads/mod_evasive.conf /etc/httpd/conf.d/mod_evasive.conf
+/bin/cp payloads/mod_security.conf /etc/httpd/conf.d/mod_security.conf
+echo "[Moved configuration files to Apache...]"
+echo "[Registering a SSL certificate with Let's Encrypt...]"
+certbot --non-interactive --agree-tos --redirect --hsts --uir -m <your@emailaddress.com> --apache -d <default_site_URI> -d www.<default_site_URI>
 echo "[Adding a crontab schedule to renew SSL certificates...]"
 crontab -l | { cat; echo "30 2 * * * /usr/bin/certbot renew >> /var/log/le-renew.log"; } | crontab -
 echo "[Scheduled a autorenew of SSL certificates...]"

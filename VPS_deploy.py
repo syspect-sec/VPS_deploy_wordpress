@@ -1181,7 +1181,7 @@ def print_command_help_output():
     argument_output += "-h, -help : print help menu\n"
     argument_output += "-load : encrypt and compress the payload to be deployed\n"
     argument_output += "-open : open the payload for editing\n"
-    argument_output += "-close : close the payload for editing\n"
+    argument_output += "-close : close the payload for security\n"
     argument_output += "-deploy : deploy the payload to the VPS\n"
     argument_output += "-remotedeploy : move payload and script to remote server, deploy, then remove payload\n"
     argument_output += "-purge : deploy the payload and remove payload files\n"
