@@ -14,7 +14,7 @@ echo "[Creating SSH directory...]"
 mkdir /root/.ssh
 # Add the ssh identity file to root to configure connection to GitHub
 echo "[Adding identify files to root...]"
-/bin/cp payloads/ssh_identity_file /root/.ssh/
+/bin/cp /root/payloads/ssh_identity_file /root/.ssh/
 mv /root/.ssh/ssh_identity_file /root/.ssh/config
 chmod 0400 /root/.ssh/config
 #
@@ -54,7 +54,7 @@ then
         # Add the changes to the live branch
         git add -A
         echo "[Commiting changes to GitHub repository...]"
-        git commit -m "Auto commit from server on \$(date +\%m_\%d_\%Y)"
+        git commit -m "Auto commit from server)"
         echo "[Pushing commits to GitHub repository...]"
         git push origin live
         # Switch back to the master branch
