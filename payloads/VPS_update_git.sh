@@ -9,7 +9,7 @@
 # Email: joseph@ripplesoftware.ca
 #
 echo "[Updating GitHub repository...]"
-if [ -s payloads/id_rsa_github ]
+if [ -s payloads/<default_github_private_key_filename> ]
 then
     echo "[Starting to process GitHub repository update...]"
     # Make a ssh directory and set permissions
@@ -22,17 +22,17 @@ then
     echo "[Adding GitHub as known host to root...]"
     # Add github.com to the known_hosts file
     ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    # Copy the GitHub SSH keys to /root/.ssh directory
     echo "[Moving GitHub SSH keys to root...]"
-    /bin/cp payloads/id_rsa_github /root/.ssh
-    /bin/cp payloads/id_rsa_github.pub /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename> /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename>.pub /root/.ssh
     # Modify permissions
-    chmod 0400 /root/.ssh/id_rsa_github
-    chmod 0400 /root/.ssh/id_rsa_github.pub
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>.pub
+    # Copy the GitHub SSH keys to /root/.ssh directory
     echo "[Adding GitHub SSH keys to root ssh agent...]"
     eval `ssh-agent -s`
-    ssh-add /root/.ssh/id_rsa_github
+    ssh-add /root/.ssh/<default_github_private_key_filename>
     # For each repository listed in githubuser file
     while read -r -a githubuser
     do

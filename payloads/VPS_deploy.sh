@@ -154,6 +154,8 @@ done < payloads/userdata
 echo "[Installing Apache...]"
 yum install -y httpd
 echo "[Apache installed...]"
+/bin/cp /etc/mime.types /etc/httpd/conf/mime.types
+echo "[Moved mime.types file to /etc/httpd/conf directory...]"
 #
 # Install PHP 7.1 and necessary extensions
 #
@@ -162,16 +164,21 @@ if [ -s payloads/php_version ]
 then
   while read -r -a phpversion
   do
-    if [ ${phpversion} = "7.3" ]; then
+    if [ ${phpversion} = "7.4" ]; then
+      yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
+      yum install -y yum-utils
+      yum-config-manager --enable remi-php74
+      yum install php php-pdo php-fpm php-gd php-mbstring php-mysql php-curl php-mcrypt php-json -y
+    elif [ ${phpversion} = "7.3" ]; then
       yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
       yum install -y yum-utils
       yum-config-manager --enable remi-php73
-      yum install php
+      yum install php php-pdo php-fpm php-gd php-mbstring php-mysql php-curl php-mcrypt php-json -y
     elif [ ${phpversion} = "7.2" ]; then
       yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm
       yum install -y yum-utils
       yum-config-manager --enable remi-php72
-      yum install php
+      yum install php php-pdo php-fpm php-gd php-mbstring php-mysql php-curl php-mcrypt php-json -y
     elif [ ${phpversion} = "7.1" ]; then
       rpm -Uvh https://mirror.webtatic.com/yum/el7/webtatic-release.rpm
       yum install -y mod_php71w php71w-cli php71w-common php71w-gd php71w-mbstring php71w-mcrypt php71w-mysqlnd php71w-xml
@@ -250,6 +257,11 @@ then
       mysql -e "GRANT SELECT, SHOW VIEW, RELOAD, REPLICATION CLIENT, EVENT, TRIGGER ON *.* TO 'backup'@'localhost';"
       echo mysql -e "GRANT SELECT, LOCK TABLES, SHOW VIEW, RELOAD, REPLICATION CLIENT, EVENT, TRIGGER ON *.* TO 'backup'@'localhost';"
       echo "[MySQL backup user created...]"
+    else
+      mysql -e "CREATE USER '${mysqlpass[0]}'@'localhost' IDENTIFIED BY '${mysqlpass[1]}';"
+      echo mysql -e "CREATE USER '${mysqlpass[0]}'@'localhost' IDENTIFIED BY 'redacted';"
+      echo mysql -e "GRANT ALL ON <default_github_reponame>.* TO '${mysqlpass[0]}'@'localhost';"
+      echo "[MySQL site user created...]"
     fi
   done < payloads/mysql_userdata
 fi
@@ -307,7 +319,7 @@ echo "[Firewall reloaded with changes...]"
 #
 # Connect to GitHub and install the website
 # NOTE:Your github ssh pub key needs to have been added to GitHub already
-if [ -s payloads/id_rsa_github ]
+if [ -s payloads/<default_github_private_key_filename> ]
 then
     echo "[Starting to process Git installation...]"
     # Install Git
@@ -321,17 +333,17 @@ then
     echo "[Adding GitHub as known host to root...]"
     # Add github.com to the known_hosts file
     ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    # Copy the GitHub SSH Keys to /root/.ssh directory
     echo "[Moving GitHub SSH keys to root...]"
-    /bin/cp payloads/id_rsa_github /root/.ssh
-    /bin/cp payloads/id_rsa_github.pub /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename> /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename>.pub /root/.ssh
     # Modify permissions
-    chmod 0400 /root/.ssh/id_rsa_github
-    chmod 0400 /root/.ssh/id_rsa_github.pub
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>.pub
+    # Copy the <default_github_private_key_filename> and <default_github_private_key_filename>.pub to /root/.ssh directory
     echo "[Adding GitHub SSH keys to root ssh agent...]"
     eval `ssh-agent -s`
-    ssh-add /root/.ssh/id_rsa_github
+    ssh-add /root/.ssh/<default_github_private_key_filename>
     # For each repository listed in githubuser file
     while read -r -a githubuser
     do

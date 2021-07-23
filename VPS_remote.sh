@@ -18,11 +18,18 @@ do
       # Install the epel release
       ssh root@${sshdata[1]} 'yum install -y epel-release'
       echo "[Added epel-release repository to server...]"
+      # Install Python 3.6
+      ssh root@${sshdata[1]} 'yum install -y https://repo.ius.io/ius-release-el7.rpm'
+      #ssh root@${sshdata[1]} 'yum -y update'
+      ssh root@${sshdata[1]} 'yum install -y python36u python36u-libs python36u-devel python36u-pip'
+      ssh root@${sshdata[1]} 'python3.6 -V'
+      echo "[Added Python 3.6 to server...]"
       # Install python pip
       ssh root@${sshdata[1]} 'yum install -y python-pip'
       echo "[Added python-pip to server...]"
       # Upgrade pip
       ssh root@${sshdata[1]} 'pip install --upgrade pip'
+      ssh root@${sshdata[1]} 'pip3 install --upgrade pip'
       echo "[Added pip update to server...]"
       # Install python developer package
       ssh root@${sshdata[1]} 'yum install -y python-devel.x86_64'
@@ -31,7 +38,15 @@ do
       ssh root@${sshdata[1]} 'yum install -y gcc'
       echo "[Added gcc to server...]"
       # Install pycrypto
-      ssh root@${sshdata[1]} 'pip install -I pycrypto'
+      #ssh root@${sshdata[1]} 'python3 -m venv /root/install-env'
+      #ssh root@${sshdata[1]} 'source /root/install-env/bin/activate'
+      #echo "[Python virtual environment activated...]"
+      ssh root@${sshdata[1]} 'pip3 uninstall crypto'
+      ssh root@${sshdata[1]} 'pip3 uninstall pycrypto'
+      ssh root@${sshdata[1]} 'pip3 install wheel'
+      ssh root@${sshdata[1]} 'pip3 install pycrypto'
+      #ssh root@${sshdata[1]} 'python -m pip install -I pycrypto'
+      #ssh root@${sshdata[1]} 'python3.6 -m pip install -I pycrypto'
       echo "[Added pycrypto to server...]"
       echo "[Moving payload and script to server...]"
       # Move the payoad
@@ -56,13 +71,13 @@ do
           if [ $2 = 1 ]
             then
               echo "[Issuing deploy and purge commands to remote server...]"
-              ssh root@${sshdata[1]} "python VPS_deploy.py -deploy -purge -p $1 >> VPS_deploy.log"
+              ssh root@${sshdata[1]} "python3.6 VPS_deploy.py -deploy -purge -p $1 >> VPS_deploy.log"
               # Output to stdout, stderr, and VPS_deploy.log
               #ssh root@${sshdata[1]} "python VPS_deploy.py -deploy -purge -p $1 2>&1 | tee VPS_deploy.log"
               echo "[Deploy and purge command issued to remote server...]"
             else
               echo "[Issuing deploy command to remote server...]"
-              ssh root@${sshdata[1]} "python VPS_deploy.py -deploy -p $1 >> VPS_deploy.log"
+              ssh root@${sshdata[1]} "python3.6 VPS_deploy.py -deploy -p $1 >> VPS_deploy.log"
               # Output to stdout, stderr, and VPS_deploy.log
               #ssh root@${sshdata[1]} "python VPS_deploy.py -deploy -purge -p $1 2>&1 | tee VPS_deploy.log"
               echo "[Deploy command issued to remote server...]"

@@ -1,2 +1,3 @@
 root <default_mysql_root_password>
 backup <default_mysql_backup_password>
+<default_github_reponame> <default_mysql_site_user_password>

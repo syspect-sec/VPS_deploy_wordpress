@@ -19,7 +19,9 @@
 #RootPassword change_this_password
 #NonRootPassword change_this_password
 #MySQLRootPassword change_this_password
+#MySQLSiteUserPassword change_this_password
 #MySQLBackupPassword change_this_password
+#GitHubBaseKeyName id_private_key_name
 #
 # Optional Settings
 #
@@ -34,10 +36,10 @@
 # specify the local path to it here
 #
 #UploadsDirLocalPath /path/to/your/wordpress/wp-content/uploads
-# The PHP version to be installed (5.5, 5.6, 7.1 (default), 7.2)
+# The PHP version to be installed (5.5, 5.6, 7.x, default = 7.4)
 #
-#PHPVersion 7.1
-# The datbase application to install (mariadb (default), mysql, postgres)
+#PHPVersion 7.4
+# The database application to install (mariadb (default), mysql, postgres)
 #
 #DBApplication mariadb
 # Add as many additional applications as you want

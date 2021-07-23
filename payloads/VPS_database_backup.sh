@@ -26,14 +26,14 @@ then
     echo "[Adding backup server IP as known host to root...]"
     # Add github.com to the known_hosts file
     ssh-keyscan -H <default_remote_backup_IP> >> /root/.ssh/known_hosts
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    # Copy the SSH keys used for backing up files to /root/.ssh directory
     echo "[Moving backup server SSH keys to root...]"
     /bin/cp payloads/id_rsa_backup /root/.ssh
     /bin/cp payloads/id_rsa_backup.pub /root/.ssh
     # Modify permissions
     chmod 0400 /root/.ssh/id_rsa_backup
     chmod 0400 /root/.ssh/id_rsa_backup.pub
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    # Copy the GitHub access SSH keys to /root/.ssh directory
     echo "[Adding backup server SSH keys to root ssh agent...]"
     eval `ssh-agent -s`
     ssh-add /root/.ssh/id_rsa_backup

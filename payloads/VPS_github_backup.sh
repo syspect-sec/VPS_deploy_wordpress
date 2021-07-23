@@ -21,23 +21,23 @@ chmod 0400 /root/.ssh/config
 # Perform GitHub backup actions
 #
 echo "[Starting to process GitHub repository update...]"
-if [ -s payloads/id_rsa_github ]
+if [ -s payloads/<default_github_private_key_filename> ]
 then
     echo "[Starting to process GitHub repository update...]"
     echo "[Adding GitHub as known host to root...]"
     # Add github.com to the known_hosts file
     ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-    # Copy the id_rsa_github and id_rsa_github.pub to /root/.ssh directory
+    # Copy the GitHub SSH keys to /root/.ssh directory
     echo "[Moving GitHub SSH keys to root...]"
-    /bin/cp payloads/id_rsa_github /root/.ssh
-    /bin/cp payloads/id_rsa_github.pub /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename> /root/.ssh
+    /bin/cp payloads/<default_github_private_key_filename>.pub /root/.ssh
     # Modify permissions
-    chmod 0400 /root/.ssh/id_rsa_github
-    chmod 0400 /root/.ssh/id_rsa_github.pub
-    # Copy the id_rsa_github to ssh-agent
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>
+    chmod 0400 /root/.ssh/<default_github_private_key_filename>.pub
+    # Copy the <default_github_private_key_filename> to ssh-agent
     echo "[Adding GitHub SSH keys to root ssh agent...]"
     eval `ssh-agent -s`
-    ssh-add /root/.ssh/id_rsa_github
+    ssh-add /root/.ssh/<default_github_private_key_filename>
     # For each repository listed in githubuser file
     while read -r -a githubuser
     do
@@ -47,6 +47,8 @@ then
         # Push the live site to the GitHub repository 'live' branch
         #
         cd /var/www/html/${githubuser[0]}
+        # Create a branch for current state
+        git branch  $(date '+%Y-%m-%d')
         # Push the current site to the live branch
         git fetch . master:live
         # Switch to the live branch
@@ -54,14 +56,11 @@ then
         # Add the changes to the live branch
         git add -A
         echo "[Commiting changes to GitHub repository...]"
-        git commit -m "Auto commit from server)"
+        git commit -m "Auto commit from server"
         echo "[Pushing commits to GitHub repository...]"
         git push origin live
         # Switch back to the master branch
         git checkout master
-        # Remove the ssh-agent deamon
-        eval `ssh-agent -k`
-        echo "[ssh-agent process killed...]"
         # Set permissions files for host domain
         echo "[Re-writing ownership...]"
         chown -R apache:apache /var/www/html/${githubuser[0]}
@@ -73,6 +72,9 @@ echo "[VPS_deploy has finished pushing changes to GitHub repository...]"
 #
 # Clean up
 #
+# Remove the ssh-agent deamon
+eval `ssh-agent -k`
+echo "[ssh-agent process killed...]"
 # Clear the command line history
 echo "[Removing command line history...]"
 history -c
