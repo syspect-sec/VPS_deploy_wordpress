@@ -14,7 +14,7 @@ echo "[Creating SSH directory...]"
 mkdir /root/.ssh
 # Add the ssh identity file to root to configure connection to GitHub
 echo "[Adding identify files to root...]"
-/bin/cp /root/payloads/ssh_identity_file /root/.ssh/
+cp /root/payloads/ssh_identity_file /root/.ssh/
 mv /root/.ssh/ssh_identity_file /root/.ssh/config
 chmod 0400 /root/.ssh/config
 #
@@ -29,8 +29,8 @@ then
     ssh-keyscan -H github.com >> /root/.ssh/known_hosts
     # Copy the GitHub SSH keys to /root/.ssh directory
     echo "[Moving GitHub SSH keys to root...]"
-    /bin/cp payloads/<default_github_private_key_filename> /root/.ssh
-    /bin/cp payloads/<default_github_private_key_filename>.pub /root/.ssh
+    cp /root/payloads/<default_github_private_key_filename> /root/.ssh
+    cp /root/payloads/<default_github_private_key_filename>.pub /root/.ssh
     # Modify permissions
     chmod 0400 /root/.ssh/<default_github_private_key_filename>
     chmod 0400 /root/.ssh/<default_github_private_key_filename>.pub
@@ -48,7 +48,8 @@ then
         #
         cd /var/www/html/${githubuser[0]}
         # Create a branch for current state
-        git branch  $(date '+%Y-%m-%d')
+        git branch $(date '+%Y-%m-%d')
+        git checkout $(date '+%Y-%m-%d')
         # Push the current site to the live branch
         git fetch . master:live
         # Switch to the live branch

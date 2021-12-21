@@ -189,6 +189,9 @@ def get_github_data_from_file():
             if line.split()[0] == "GitHubRepo":
                 github_data.update({"github_reponame" : line.split()[1]})
                 print ("GitHub repository name: " + github_data['github_reponame'])
+            if line.split()[0] == "GitHubBaseKeyName":
+                github_data.update({"github_keyname" : line.split()[1]})
+                print ("GitHub key name: " + github_data['github_keyname'])
 
     if "github_username" not in github_data or "github_reponame" not in github_data:
         print ("[You did add your GitHub info to the serverdata file...]")
@@ -216,6 +219,7 @@ def prepare_args(args):
     # GitHub username and repo name
     args.update({"github_username" : github_data['github_username']})
     args.update({"github_reponame" : github_data['github_reponame']})
+    args.update({"github_keyname" : github_data['github_keyname']})
 
     # Return the updated args array
     return args
@@ -476,19 +480,25 @@ def remove_payload(args):
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         # Print the error
         print ('Failed to remove payload files: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
-        # Log error with creating filepath
         logger.error('Failed to remove payload files: ' + str(e) + str(exc_type) + str(fname) + str(exc_tb.tb_lineno))
         return False
 
 # Perform decryption
 def perform_decryption(key, ciphertext):
 
-    # Decrypt the file from encrypted format
-    IV = ciphertext[:AES.block_size]
-    decryptor = AES.new(args['command_args']['key'], AES.MODE_CBC, IV=IV)
-    plaintext = unpad(decryptor.decrypt(ciphertext[AES.block_size:]), AES.block_size)
-    # Return the decrypted data
-    return plaintext
+    try:
+        # Decrypt the file from encrypted format
+        IV = ciphertext[:AES.block_size]
+        decryptor = AES.new(args['command_args']['key'], AES.MODE_CBC, IV=IV)
+        plaintext = unpad(decryptor.decrypt(ciphertext[AES.block_size:]), AES.block_size)
+        # Return the decrypted data
+        return plaintext
+    except Exception as e:
+        # Print the error
+        print ('[*] Decryption of contents failed...')
+        logger.error('[*] Decryption of contents failed...')
+        return None
+
 
 # Validate the password is correct for the payload
 def validate_password(args):
@@ -512,10 +522,10 @@ def validate_password(args):
         with open(args["password_check_filename"], "rb") as passcheck_file:
             passcheck_content = passcheck_file.read()
             passcheck_content = perform_decryption(args['command_args']['key'], passcheck_content).decode('utf-8')
-            # Remove the extracted file from the payload
-            os.remove(args["password_check_filename"])
             # Check password and exit or return True
-            if passcheck_content[0] == "^":
+            if passcheck_content and passcheck_content[0] == "^":
+                # Remove the extracted file from the payload
+                os.remove(args["password_check_filename"])
                 print("[Validated supplied password...]")
                 return True
             else:
@@ -776,6 +786,12 @@ def initialize_payload(args):
     if args['current_github_username'] != args['github_username'] or args['current_github_reponame'] != args['github_reponame']:
         print ("- Initializing the payload GitHub repo from " + args['current_github_username'] + ":" + args['current_github_reponame'] + " to " + args['github_username'] + ":" + args['github_reponame'])
         logger.info("- Initializing the payload GitHub repo from " + args['current_github_username'] + ":" + args['current_github_reponame'] + " to " + args['github_username'] + ":" + args['github_reponame'])
+    # Log and stdout the github key pair data changes to be made
+    if args['current_github_private_key_filename'] != False:
+        if args['current_github_private_key_filename'] != args['default_github_private_key_filename']:
+            print ("- Initializing the payload default github private key filename from " + args['current_github_private_key_filename'] + " to " + args['default_github_private_key_filename'])
+            logger.info("- Initializing the payload default github private key filename from " + args['current_github_private_key_filename'] + " to " + args['default_github_private_key_filename'])
+
     # Log and stdout the remote backup server data changes to be made
     if args['remote_backup_IP'] != False:
         if args['current_remote_backup_username'] != args['remote_backup_username']:
@@ -845,6 +861,7 @@ def store_new_configuration_settings(args):
         init_as.write("MySQLBackupPassword " + args['mysql_backup_password'] + "\n")
         init_as.write("GitHubUser " + args['github_username'] + "\n")
         init_as.write("GitHubRepo " + args['github_reponame'] + "\n")
+        init_as.write("GitHubBaseKeyName " + args['github_keyname'] + "\n")
         if args['uploads_dirpath'] != False:
             init_as.write("UploadsDirLocalPath " + args['uploads_dirpath'] + "\n")
         print ("[Finished storing new configuration settings...]")
@@ -973,6 +990,11 @@ def initialize_single_file(key, args, filename):
                     if args['current_github_reponame'] in line:
                         print ("[Found GitHub reponame to be replaced...]")
                         line = line.replace(args['current_github_reponame'], args['github_reponame'])
+                        replacement_count += 1
+                    # Replace any modified instances of the current/default GitHub repository name
+                    if args['current_github_private_key_filename'] in line:
+                        print ("[Found GitHub key name to be replaced...]")
+                        line = line.replace(args['current_github_private_key_filename'], args['github_keyname'])
                         replacement_count += 1
                 if key == "mysql_user_data":
                     # Replace any modified instances of the current/default MySQL root password
@@ -1201,35 +1223,35 @@ if __name__ == '__main__':
         "sandbox_mode" : True,
         "log_filename" : cwd + "/log",
         "cwd" : cwd + "/",
-        # Default site URL in the vanilla version of the package
+        # Default site URL in the unconfigured version of the package
         "default_site_URI" : "<default_site_URI>",
-        # Default IP address in the vanilla version of the package
+        # Default IP address in the unconfigured version of the package
         "default_site_IP" : "<default_site_IP>",
         # Default IP address in regex for httpd.conf
         "default_regex_site_IP" : "123.456.78.9",
-        # Default remote backup server username in the vanilla version of the package
+        # Default remote backup server username in the unconfigured version of the package
         "default_remote_backup_username" : "<default_remote_backup_username>",
-        # Default remote backup server IP address in the vanilla version of the package
+        # Default remote backup server IP address in the unconfigured version of the package
         "default_remote_backup_IP" : "<default_remote_backup_IP>",
-        # Default admin emaill address in the vanilla version of the package
+        # Default admin emaill address in the unconfigured version of the package
         "default_admin_email" : "<your@emailaddress.com>",
-        # Default github username in the vanilla version of the package
+        # Default github username in the unconfigured version of the package
         "default_github_username" : "<default_github_username>",
-        # Default github repo username in the vanilla version of the package
+        # Default github repo username in the unconfigured version of the package
         "default_github_reponame" : "<default_github_reponame>",
-        # Default github private key filename in the vanilla version of the package
+        # Default github private key filename in the unconfigured version of the package
         "default_github_private_key_filename" : "<default_github_private_key_filename>",
-        # Default non-root username in the vanilla version of the package
+        # Default non-root username in the unconfigured version of the package
         "default_non_root_username" : "<default_non_root_username>",
-        # Default root password in the vanilla version of the package
+        # Default root password in the unconfigured version of the package
         "default_root_password" : "<default_root_password>",
-        # Default non-root user password in the vanilla version of the package
+        # Default non-root user password in the unconfigured version of the package
         "default_non_root_password" : "<default_non_root_password>",
-        # Default MySQL root password in the vanilla version of the package
+        # Default MySQL root password in the unconfigured version of the package
         "default_mysql_root_password" : "<default_mysql_root_password>",
-        # Default MySQL site user password in the vanilla version of the package
+        # Default MySQL site user password in the unconfigured version of the package
         "default_mysql_site_user_password" : "<default_mysql_site_user_password>",
-        # Default  in the vanilla version of the package
+        # Default  in the unconfigured version of the package
         "default_mysql_backup_password" : "<default_mysql_backup_password>",
         # Allowed command line args
 		"allowed_args" : ["-load", "-remotedeploy", "-deploy", "-open", "-close", "-p", "-opendev", "-closedev", "-purge", "-update", "-migrate", "-githubbackup", "-databasebackup"],
@@ -1281,13 +1303,16 @@ if __name__ == '__main__':
             # Files that have GitHub data to be replaced
             "github_data" : [
                 cwd + "/payloads/github_userdata",
+                cwd + "/payloads/ssh_identity_file",
+                cwd + "/payloads/ssh_identity_file",
                 cwd + "/payloads/httpd.conf",
                 cwd + "/payloads/site_ownership",
                 cwd + "/payloads/site_permissions",
                 cwd + "/payloads/site_permissions_open",
                 cwd + "/payloads/V_host.conf",
                 cwd + "/payloads/VPS_deploy.sh",
-                cwd + "/payloads/mysql_userdata"
+                cwd + "/payloads/VPS_update_git.sh",
+                cwd + "/payloads/VPS_github_backup.sh"
             ],
             # Files that have remote backup server data to be replaced
             "remote_serverdata" : [

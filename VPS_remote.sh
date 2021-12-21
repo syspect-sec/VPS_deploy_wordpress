@@ -28,8 +28,7 @@ do
       ssh root@${sshdata[1]} 'yum install -y python-pip'
       echo "[Added python-pip to server...]"
       # Upgrade pip
-      ssh root@${sshdata[1]} 'pip install --upgrade pip'
-      ssh root@${sshdata[1]} 'pip3 install --upgrade pip'
+      ssh root@${sshdata[1]} 'pip install --user --upgrade pip'
       echo "[Added pip update to server...]"
       # Install python developer package
       ssh root@${sshdata[1]} 'yum install -y python-devel.x86_64'
@@ -41,10 +40,10 @@ do
       #ssh root@${sshdata[1]} 'python3 -m venv /root/install-env'
       #ssh root@${sshdata[1]} 'source /root/install-env/bin/activate'
       #echo "[Python virtual environment activated...]"
-      ssh root@${sshdata[1]} 'pip3 uninstall crypto'
       ssh root@${sshdata[1]} 'pip3 uninstall pycrypto'
       ssh root@${sshdata[1]} 'pip3 install wheel'
-      ssh root@${sshdata[1]} 'pip3 install pycrypto'
+      ssh root@${sshdata[1]} 'pip3 install --user pycrypto'
+      ssh root@${sshdata[1]} 'pip3 install --user pycryptodome'
       #ssh root@${sshdata[1]} 'python -m pip install -I pycrypto'
       #ssh root@${sshdata[1]} 'python3.6 -m pip install -I pycrypto'
       echo "[Added pycrypto to server...]"
