@@ -73,7 +73,7 @@ yum install -y fail2ban
 /bin/cp payloads/multiban.conf /etc/fail2ban/filter.d/multiban.conf
 /bin/cp payloads/http-get-dos.conf /etc/fail2ban/filter.d/http-get-dos.conf
 /bin/cp payloads/http-post-dos.conf /etc/fail2ban/filter.d/http-post-dos.conf
-systemctl restart fail2ban
+systemctl start fail2ban
 systemctl enable fail2ban
 fail2ban-client status
 echo "[fail2ban installed, enabled, and added to systemctl services...]"
@@ -325,8 +325,13 @@ then
     # Install Git
     yum -y install git
     echo "[Git installed...]"
+    echo "[Configure Git user...]"
+    git config --global user.email '<your@emailaddress.com>'
+    git config --global user.name '<your@emailaddress.com>'
+    echo "[Git user configured...]"
     # Add the ssh identity file to root to configure connection to github
     echo "[Adding identify files to root...]"
+    mkdir /root/.ssh
     /bin/cp payloads/ssh_identity_file /root/.ssh/
     mv /root/.ssh/ssh_identity_file /root/.ssh/config
     chmod 0400 /root/.ssh/config
@@ -506,11 +511,10 @@ fi
 #
 # Start Apache
 echo "[Starting Apache...]"
-service httpd start
+systemctl start httpd
 # Set Apache to start on server boot
 echo "[Addding Apache to system services...]"
 systemctl enable httpd
-systemctl enable httpd.service
 echo "[Apache started and added to system services...]"
 #
 # Install Additional Security Scripts
@@ -627,6 +631,10 @@ systemctl restart httpd
 # Show status of Apache
 systemctl status httpd
 echo "[Apache restarted...]"
+# Install the Digital Ocean Monitoring Metric
+echo "[Installing the Digital Ocean monitoring agent...]"
+curl -sSL https://repos.insights.digitalocean.com/install.sh | sudo bash
+echo "[Digital Ocean monitoring agent installed...]"
 # TODO: adjust the ~/.ssh/config file to specify the ssd_config port on client
 # TODO: Check if the sshd_config file port, if it's not 22, then
 # add to firewall and SELinux
@@ -646,9 +654,9 @@ echo "[Apache restarted...]"
 # Apache Config Locker
 #
 # Encrypt the httpd.conf file
-echo "[Closing Apache config using Apache config locker...]"
-python payloads/apache_config_locker.py -close -p $1
-echo "[Apache config closed...]"
+#echo "[Closing Apache config using Apache config locker...]"
+#python payloads/apache_config_locker.py -close -p $1
+#echo "[Apache config closed...]"
 #
 #TODO Harden the httpd file permissions
 #

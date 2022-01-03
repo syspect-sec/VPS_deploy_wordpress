@@ -11,7 +11,9 @@ import sys
 import logging
 import time
 import hashlib
+from Crypto.Random import get_random_bytes
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 import smtplib
 import subprocess
 

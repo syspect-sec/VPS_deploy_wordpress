@@ -41,7 +41,7 @@ do
       #ssh root@${sshdata[1]} 'source /root/install-env/bin/activate'
       #echo "[Python virtual environment activated...]"
       ssh root@${sshdata[1]} 'pip3 uninstall pycrypto'
-      ssh root@${sshdata[1]} 'pip3 install wheel'
+      ssh root@${sshdata[1]} 'pip3 install --user wheel'
       ssh root@${sshdata[1]} 'pip3 install --user pycrypto'
       ssh root@${sshdata[1]} 'pip3 install --user pycryptodome'
       #ssh root@${sshdata[1]} 'python -m pip install -I pycrypto'

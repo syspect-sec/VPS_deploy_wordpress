@@ -51,7 +51,7 @@ then
         git branch $(date '+%Y-%m-%d')
         git checkout $(date '+%Y-%m-%d')
         # Push the current site to the live branch
-        git fetch . master:live
+        git fetch . main:live
         # Switch to the live branch
         git checkout live
         # Add the changes to the live branch
@@ -60,8 +60,8 @@ then
         git commit -m "Auto commit from server"
         echo "[Pushing commits to GitHub repository...]"
         git push origin live
-        # Switch back to the master branch
-        git checkout master
+        # Switch back to the main branch
+        git checkout main
         # Set permissions files for host domain
         echo "[Re-writing ownership...]"
         chown -R apache:apache /var/www/html/${githubuser[0]}

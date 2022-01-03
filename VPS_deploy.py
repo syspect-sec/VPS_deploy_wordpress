@@ -275,14 +275,19 @@ def store_critical_information(args):
     critical_information_string += "\n\nOption A:"
     critical_information_string += "\n1. Copy (scp) payload.zip and VP_deplpy.py to your server"
     critical_information_string += "\n2. SSH into your VPS"
-    critical_information_string += "\n3. Deploy (as root): $ python VPS_deploy.py -deploy -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n3. Deploy (as root): $ python3 VPS_deploy.py -deploy -p " + args['command_args']['raw_password'] + "\n"
     critical_information_string += "\n\nOption B:"
-    critical_information_string += "\n1. Remote deploy: $ python VPS_deploy.py -remotedeploy -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n1. Remote deploy: $ python3 VPS_deploy.py -remotedeploy -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n\nServer Commands:"
+    critical_information_string += "\n1. Open Payload: $ python3 VPS_deploy.py -open -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n2. Close Payload: $ python3 VPS_deploy.py -close -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n3. Update from Git Repo: $ python3 VPS_deploy.py -update -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n4. Push Backup to Git Repo: $ python3 VPS_deploy.py -backup -p " + args['command_args']['raw_password'] + "\n"
     critical_information_string += "\n\nApache Config Locker:"
     critical_information_string += "\nApache configuration file has been encrypted.  Here are the commmands to decrypt it, or to restart Apache."
-    critical_information_string += "\n1. Command to decrypt httpd config file: $ python apache_config_locker.py -open -p " + args['command_args']['raw_password']
-    critical_information_string += "\n2. Command to encrypt httpd config file: $ python apache_config_locker.py -close -p " + args['command_args']['raw_password']
-    critical_information_string += "\n3. Command to restart Apache and re-encrypt the config file: $ python apache_config_locker.py -restart -p " + args['command_args']['raw_password'] + "\n"
+    critical_information_string += "\n1. Command to decrypt httpd config file: $ python3 apache_config_locker.py -open -p " + args['command_args']['raw_password']
+    critical_information_string += "\n2. Command to encrypt httpd config file: $ python3 apache_config_locker.py -close -p " + args['command_args']['raw_password']
+    critical_information_string += "\n3. Command to restart Apache and re-encrypt the config file: $ python3 apache_config_locker.py -restart -p " + args['command_args']['raw_password'] + "\n"
 
     try:
         for critical_item in args['critical_payload_information_files']:
@@ -1188,7 +1193,7 @@ def print_command_help_output():
     argument_output += "-remotedeploy : move payload and script to remote server, deploy, then remove payload\n"
     argument_output += "-purge : deploy the payload and remove payload files\n"
     argument_output += "-update : update the GitHub repository (must be done locally on server)\n"
-    argument_output += "-backup : backup the GitHub repository and move the databse backups to backup server\n"
+    argument_output += "-backup : backup the GitHub repository and move the database backups to backup server\n"
     argument_output += "-opendev : open the permissions on the web-root for editing\n"
     argument_output += "-closedev : close the permissions on the web-root for editing\n"
     argument_output += "-migrate : modify an SQL script to change the URL\n"
